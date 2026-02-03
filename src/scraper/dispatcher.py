@@ -8,6 +8,7 @@ from config import WORKDAY_PATTERNS, EIGHTFOLD_PATTERNS
 from scraper.base_scraper import BaseScraper
 from scraper.generic_scraper import GenericScraper
 from scraper.workday_scraper import WorkdayScraper
+from scraper.eightfold_scraper import EightfoldScraper
 
 
 class ScraperDispatcher:
@@ -58,8 +59,7 @@ class ScraperDispatcher:
         if platform == 'workday':
             return WorkdayScraper(company_name, career_url)
         elif platform == 'eightfold':
-            # Eightfold uses similar patterns to generic, but with some specifics
-            # For now, use generic scraper (can add EightfoldScraper later if needed)
-            return GenericScraper(company_name, career_url)
+            return EightfoldScraper(company_name, career_url)
         else:
             return GenericScraper(company_name, career_url)
+

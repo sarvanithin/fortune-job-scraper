@@ -29,12 +29,21 @@ class GenericScraper(BaseScraper):
         # Common job card patterns
         '[data-job-id]',
         '[data-automation-id*="job"]',
+        '[data-testid*="job"]',
+        '[data-test*="job"]',
+        # Direct job links
         'a[href*="/job/"]',
         'a[href*="/jobs/"]',
         'a[href*="/position/"]',
         'a[href*="/requisition/"]',
         'a[href*="/opening/"]',
         'a[href*="/career/"]',
+        'a[href*="/posting/"]',
+        'a[href*="/vacancy/"]',
+        'a[href*="jobId="]',
+        'a[href*="job-id="]',
+        'a[href*="positionId="]',
+        # Class-based patterns
         '.job-listing a',
         '.job-card a',
         '.job-item a',
@@ -43,19 +52,56 @@ class GenericScraper(BaseScraper):
         '.jobs-list a',
         '.career-listing a',
         '.position-listing a',
+        '.opening-listing a',
+        '.vacancy-listing a',
+        # Modern SPA patterns
+        '[class*="JobCard"] a',
+        '[class*="job-card"] a',
+        '[class*="jobCard"] a',
+        '[class*="JobItem"] a',
+        '[class*="job-item"] a',
+        '[class*="jobItem"] a',
+        '[class*="JobResult"] a',
+        '[class*="job-result"] a',
+        '[class*="jobResult"] a',
+        '[class*="PositionCard"] a',
+        '[class*="position-card"] a',
+        '[class*="positionCard"] a',
+        # List items
         '[class*="job"] a[href]',
         '[class*="Job"] a[href]',
         '[class*="position"] a[href]',
         '[class*="Position"] a[href]',
+        '[class*="career"] a[href]',
+        '[class*="Career"] a[href]',
+        # Article/li/div based
         'article a[href*="job"]',
+        'article[class*="job"] a',
         'li[class*="job"] a',
+        'li[class*="Job"] a',
         'div[class*="search-result"] a',
+        'div[class*="SearchResult"] a',
         'tr[class*="job"] a',
+        # Title-based
         '.job-title a',
         'a.job-link',
         'a.job-title',
         'a.position-link',
+        'h2 a[href*="job"]',
+        'h3 a[href*="job"]',
+        'h4 a[href*="job"]',
+        # Role/listitem patterns
+        '[role="listitem"] a[href*="job"]',
+        '[role="listitem"] a[href*="career"]',
+        '[role="article"] a',
+        # Table-based job listings
+        'table a[href*="job"]',
+        'table a[href*="career"]',
+        # Grid patterns
+        '[class*="grid"] a[href*="job"]',
+        '[class*="Grid"] a[href*="job"]',
     ]
+
 
     # Selectors for pagination elements
     PAGINATION_SELECTORS = [
@@ -144,6 +190,12 @@ class GenericScraper(BaseScraper):
             try:
                 # Navigate to career page
                 await self._navigate_with_retry(self.career_url)
+                
+                # Wait extra time for SPAs to render
+                await asyncio.sleep(3)
+                
+                # Try scroll-to-load for lazy-loading content
+                await self._scroll_to_load_content()
 
                 # Scrape current page and handle pagination
                 page_count = 0
@@ -169,6 +221,7 @@ class GenericScraper(BaseScraper):
 
             finally:
                 await self.browser.close()
+
 
         # Filter jobs by keywords
         filtered_jobs = []
@@ -201,6 +254,33 @@ class GenericScraper(BaseScraper):
                     print(f"  Failed to load {url} after {MAX_RETRIES} attempts")
                     raise
         return False
+
+    async def _scroll_to_load_content(self):
+        """Scroll down to trigger lazy-loading of job listings."""
+        try:
+            # Get initial height
+            initial_height = await self.page.evaluate('document.body.scrollHeight')
+            
+            # Scroll down in steps to trigger lazy loading
+            for i in range(5):
+                await self.page.evaluate('window.scrollBy(0, window.innerHeight)')
+                await asyncio.sleep(0.5)
+            
+            # Wait for any lazy content to load
+            await asyncio.sleep(1)
+            
+            # Scroll back to top
+            await self.page.evaluate('window.scrollTo(0, 0)')
+            await asyncio.sleep(0.5)
+            
+            # Check if new content loaded
+            final_height = await self.page.evaluate('document.body.scrollHeight')
+            if final_height > initial_height:
+                print(f"    Triggered lazy loading: {final_height - initial_height}px new content")
+        except Exception as e:
+            # Not critical, continue anyway
+            pass
+
 
     async def _extract_jobs_from_page(self) -> List[Job]:
         """Extract all job listings from the current page."""
@@ -363,17 +443,27 @@ class GenericScraper(BaseScraper):
         url_lower = url.lower()
         job_patterns = [
             r'/job[s]?/',
+            r'/job[s]?$',
             r'/position[s]?/',
             r'/career[s]?/',
             r'/opening[s]?/',
             r'/requisition/',
             r'/vacancy/',
             r'/posting/',
+            r'/opportunity/',
+            r'/role[s]?/',
             r'job[-_]?id=',
             r'requisition[-_]?id=',
+            r'position[-_]?id=',
             r'/apply/',
+            r'#job',  # Hash-based URLs like Plaid
+            r'#role',
+            r'#opening',
+            r'/details/',
+            r'/view/',
         ]
         return any(re.search(p, url_lower) for p in job_patterns)
+
 
     async def _handle_pagination(self) -> bool:
         """
