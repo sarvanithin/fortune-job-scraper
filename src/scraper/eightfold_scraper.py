@@ -2,18 +2,18 @@
 Eightfold AI career site scraper.
 Handles sites like aexp.eightfold.ai, prudential.eightfold.ai, etc.
 
-Eightfold uses a React-based SPA that loads jobs dynamically.
-This scraper uses extensive selectors to find job listings in various layouts.
-
-DEBUG VERSION - Enhanced logging to troubleshoot extraction issues.
+Based on DOM inspection (AmEx):
+- Job cards have data-test-id="position-card-X"
+- Cards are div[role="link"] with class="position-card"
+- Title is in class="position-title"
+- Location is in class="position-location"
 """
 import asyncio
-import json
 import re
 from typing import List, Optional
-from urllib.parse import urljoin, urlparse, parse_qs
+from urllib.parse import urljoin, urlparse
 
-from playwright.async_api import async_playwright, Page, Browser, TimeoutError as PlaywrightTimeout
+from playwright.async_api import async_playwright, Page, Browser
 
 from config import (
     SCRAPE_DELAY_SECONDS,
@@ -26,37 +26,14 @@ from scraper.base_scraper import BaseScraper, Job
 class EightfoldScraper(BaseScraper):
     """
     Specialized scraper for Eightfold AI career sites.
-    These sites use a consistent React-based UI with left sidebar job list.
+    Uses data-test-id and class selectors from actual DOM structure.
     """
-
-    # Eightfold job link selectors - ordered by specificity
-    # The key insight is to look for links that contain /position/ in href
-    JOB_LINK_SELECTORS = [
-        # Most specific: links with position in URL (Eightfold uses /position/ paths)
-        'a[href*="/position/"]',
-        'a[href*="positionId="]',
-        'a[href*="/job/"]',
-        # Links within specific containers
-        '[class*="position"] a[href]',
-        '[class*="Position"] a[href]',
-        '[class*="job-card"] a[href]',
-        '[class*="JobCard"] a[href]',
-        '[class*="search-result"] a[href]',
-        '[class*="SearchResult"] a[href]',
-        # Role attributes
-        '[role="listitem"] a[href*="position"]',
-        '[role="option"] a[href]',
-        # General patterns
-        'main a[href*="position"]',
-        'section a[href*="position"]',
-    ]
 
     def __init__(self, company_name: str, career_url: str):
         super().__init__(company_name, career_url)
         self.browser: Optional[Browser] = None
         self.page: Optional[Page] = None
-        self.seen_urls: set = set()
-        self.seen_titles: set = set()
+        self.seen_ids: set = set()
 
     async def scrape(self) -> List[Job]:
         """Scrape all job listings from Eightfold career page."""
@@ -88,47 +65,26 @@ class EightfoldScraper(BaseScraper):
                     timeout=PAGE_LOAD_TIMEOUT_MS * 2,
                 )
                 
-                # Wait for React to fully render (Eightfold is slow)
+                # Wait for React to render
                 print(f"  [Eightfold] Waiting 10s for React to render...")
                 await asyncio.sleep(10)
                 
-                # Try scrolling to load all content
-                await self._scroll_to_load_all()
+                # Click "Show more" to expand job list if available
+                await self._click_show_more()
+                
+                # Scroll to load all jobs
+                await self._scroll_job_list()
 
-                # Extract jobs using multiple strategies
+                # Extract jobs using the correct selectors
                 print(f"  [Eightfold] Extracting jobs...")
+                all_jobs = await self._extract_position_cards()
                 
-                # Primary strategy: Find all position links
-                jobs = await self._extract_position_links()
-                
-                if not jobs:
-                    print(f"  [Eightfold] Primary extraction failed, trying deep search...")
-                    jobs = await self._deep_search_for_jobs()
-                
-                all_jobs.extend(jobs)
-                
-                # Try scrolling and loading more
-                for page_num in range(2, MAX_PAGES_PER_COMPANY + 1):
-                    more_loaded = await self._load_more_jobs()
-                    if not more_loaded:
-                        break
-                    
-                    await asyncio.sleep(2)
-                    new_jobs = await self._extract_position_links()
-                    
-                    new_count = 0
-                    for job in new_jobs:
-                        if job.job_url not in self.seen_urls:
-                            self.seen_urls.add(job.job_url)
-                            all_jobs.append(job)
-                            new_count += 1
-                    
-                    if new_count == 0:
-                        break
-                    print(f"  [Eightfold] Page {page_num}: Found {new_count} more jobs")
+                print(f"  [Eightfold] Total jobs extracted: {len(all_jobs)}")
 
             except Exception as e:
                 print(f"  [Eightfold] Error: {e}")
+                import traceback
+                traceback.print_exc()
 
             finally:
                 await self.browser.close()
@@ -150,104 +106,142 @@ class EightfoldScraper(BaseScraper):
         print(f"  [Eightfold] Found {len(filtered_jobs)} matching jobs (out of {len(all_jobs)} total)")
         return filtered_jobs
 
-    async def _scroll_to_load_all(self):
-        """Scroll to trigger lazy loading."""
+    async def _click_show_more(self):
+        """Click 'Show more positions' or similar buttons."""
         try:
-            print(f"  [Eightfold] Scrolling page...")
+            show_more_selectors = [
+                'button:has-text("Show more")',
+                'button:has-text("Load more")',
+                'button:has-text("View more")',
+                'a:has-text("Show more")',
+                '[data-test-id="show-more"]',
+            ]
             
-            # Multiple scroll iterations
-            for i in range(10):
-                await self.page.evaluate('window.scrollBy(0, 500)')
-                await asyncio.sleep(0.5)
-            
-            # Scroll back to top
-            await self.page.evaluate('window.scrollTo(0, 0)')
-            await asyncio.sleep(1)
-            
+            for selector in show_more_selectors:
+                try:
+                    btn = await self.page.query_selector(selector)
+                    if btn and await btn.is_visible():
+                        print(f"  [Eightfold] Clicking show more button...")
+                        await btn.click()
+                        await asyncio.sleep(3)
+                except Exception:
+                    continue
         except Exception:
             pass
 
-    async def _extract_position_links(self) -> List[Job]:
-        """Extract jobs by finding all links that point to job positions."""
+    async def _scroll_job_list(self):
+        """Scroll within the job list container to load all jobs."""
+        try:
+            print(f"  [Eightfold] Scrolling job list...")
+            
+            # Find the job list container
+            container_selectors = [
+                '.position-sidebar-scroll-handler',
+                'div[class*="position-list"]',
+                'div[class*="positions-container"]',
+                'div[class*="search-results"]',
+            ]
+            
+            container = None
+            for sel in container_selectors:
+                container = await self.page.query_selector(sel)
+                if container:
+                    break
+            
+            if container:
+                # Scroll inside the container 
+                for _ in range(10):
+                    await container.evaluate('el => el.scrollTop += 500')
+                    await asyncio.sleep(0.5)
+            else:
+                # Fallback: scroll the page
+                for _ in range(10):
+                    await self.page.evaluate('window.scrollBy(0, 500)')
+                    await asyncio.sleep(0.3)
+            
+            await asyncio.sleep(2)
+            
+        except Exception as e:
+            print(f"  [Eightfold] Scroll error: {e}")
+
+    async def _extract_position_cards(self) -> List[Job]:
+        """Extract jobs from position cards using data-test-id."""
         jobs: List[Job] = []
         
-        for selector in self.JOB_LINK_SELECTORS:
-            try:
-                elements = await self.page.query_selector_all(selector)
-                
-                if elements:
-                    print(f"    Trying selector: {selector} -> {len(elements)} elements")
-                
-                for element in elements:
-                    job = await self._parse_link_element(element)
-                    if job and job.job_url not in self.seen_urls:
-                        self.seen_urls.add(job.job_url)
-                        self.seen_titles.add(job.job_title)
-                        jobs.append(job)
-                
-                # If we found jobs with this selector, log and continue trying other selectors
-                # (don't break - collect from all selectors to get more)
-                
-            except Exception as e:
-                continue
+        # Primary approach: Find cards by data-test-id pattern
+        # Cards are numbered: position-card-0, position-card-1, etc.
+        card_index = 0
+        while card_index < 500:  # Max 500 to prevent infinite loop
+            selector = f'[data-test-id="position-card-{card_index}"]'
+            card = await self.page.query_selector(selector)
+            
+            if not card:
+                if card_index == 0:
+                    # No cards found with data-test-id, try fallback
+                    print(f"    No data-test-id cards found, trying fallback selectors...")
+                    return await self._extract_fallback()
+                break
+            
+            job = await self._parse_position_card(card, card_index)
+            if job:
+                jobs.append(job)
+            
+            card_index += 1
         
-        # Deduplicate by URL
-        unique_jobs = []
-        seen = set()
-        for job in jobs:
-            if job.job_url not in seen:
-                seen.add(job.job_url)
-                unique_jobs.append(job)
-        
-        print(f"    Total unique jobs extracted: {len(unique_jobs)}")
-        return unique_jobs
+        print(f"    Found {len(jobs)} position cards using data-test-id")
+        return jobs
 
-    async def _parse_link_element(self, element) -> Optional[Job]:
-        """Parse a link element to extract job info."""
+    async def _parse_position_card(self, card, index: int) -> Optional[Job]:
+        """Parse a single position card."""
         try:
-            href = await element.get_attribute('href')
+            # Get title from position-title class
+            title_el = await card.query_selector('.position-title, [class*="position-title"], h2, h3')
+            title = ""
+            if title_el:
+                title = await title_el.text_content()
+                title = self.clean_text(title) if title else ""
+            
+            if not title:
+                # Try getting text from card itself
+                card_text = await card.text_content()
+                if card_text:
+                    # Get first line as title
+                    lines = [l.strip() for l in card_text.split('\n') if l.strip()]
+                    title = lines[0] if lines else ""
+            
+            if not title or len(title) < 3:
+                return None
+            
+            # Get location
+            location_el = await card.query_selector('.position-location, [class*="position-location"], [class*="location"]')
+            location = ""
+            if location_el:
+                location = await location_el.text_content()
+                location = self.clean_text(location) if location else ""
+            
+            # Get the link/URL - card itself might be clickable
+            # On Eightfold, clicking the card navigates to job detail
+            # The URL format is usually based on position ID
+            href = await card.get_attribute('href')
             if not href:
-                return None
+                # Try finding a link inside
+                link = await card.query_selector('a[href]')
+                if link:
+                    href = await link.get_attribute('href')
             
-            # Normalize URL
-            job_url = self.normalize_url(href)
-            
-            # Debug: print href for first few
-            if len(self.seen_urls) < 3:
-                print(f"      DEBUG href: {href[:100]}...")
-            
-            # Must be a job-like URL - relaxed patterns
-            job_patterns = ['/position/', 'positionid=', '/job/', 'intlink=', '/careers/']
-            if not any(x in job_url.lower() for x in job_patterns):
-                return None
-            
-            # Skip non-job links
-            skip_patterns = ['/login', '/saved', '/share', '/filter', 'javascript:', '/apply/']
-            if any(x in job_url.lower() for x in skip_patterns):
-                return None
-            
-            # Get text content as title
-            text = await element.text_content()
-            title = self.clean_text(text) if text else ""
-            
-            # If title is too long, it might include child element text
-            if len(title) > 150:
-                # Try to get just the first line
-                title = title.split('\n')[0].strip()[:150]
-            
-            # Title must be reasonable
-            if not title or len(title) < 3:
-                # Try to extract from URL
-                title = self._title_from_url(job_url)
-            
-            if not title or len(title) < 3:
-                return None
-            
-            # Try to find location in parent or sibling
-            location = await self._find_location_near(element)
+            if href:
+                job_url = self.normalize_url(href)
+            else:
+                # Construct URL from current page URL and position index
+                # This is a fallback
+                job_url = f"{self.career_url}#position-{index}"
             
             # Generate job ID
-            job_id = self._extract_job_id(job_url) or self.generate_job_id(job_url, title)
+            job_id = self._extract_job_id(job_url, title, index)
+            
+            if job_id in self.seen_ids:
+                return None
+            self.seen_ids.add(job_id)
             
             return Job(
                 job_id=job_id,
@@ -258,148 +252,54 @@ class EightfoldScraper(BaseScraper):
                 location=location,
             )
             
-        except Exception:
+        except Exception as e:
             return None
 
-    async def _find_location_near(self, element) -> str:
-        """Try to find location text near the element."""
-        try:
-            # Look in parent container
-            parent = await element.evaluate_handle('el => el.parentElement')
-            if parent:
-                location_selectors = [
-                    '[class*="location"]',
-                    '[class*="Location"]',
-                    'span:has-text("United States")',
-                    'span:has-text("New York")',
-                    'span:has-text("Remote")',
-                ]
-                for sel in location_selectors:
-                    try:
-                        loc_el = await parent.query_selector(sel)
-                        if loc_el:
-                            loc_text = await loc_el.text_content()
-                            return self.clean_text(loc_text) if loc_text else ""
-                    except Exception:
-                        continue
-        except Exception:
-            pass
-        return ""
+    async def _extract_fallback(self) -> List[Job]:
+        """Fallback extraction using class-based selectors."""
+        jobs: List[Job] = []
+        
+        fallback_selectors = [
+            '.position-card',
+            '[class*="position-card"]',
+            'div[role="link"][class*="position"]',
+            '[class*="job-card"]',
+            'a[href*="/position/"]',
+        ]
+        
+        for selector in fallback_selectors:
+            try:
+                cards = await self.page.query_selector_all(selector)
+                if not cards:
+                    continue
+                
+                print(f"    Fallback selector '{selector}' found {len(cards)} elements")
+                
+                for i, card in enumerate(cards):
+                    job = await self._parse_position_card(card, i)
+                    if job:
+                        jobs.append(job)
+                
+                if jobs:
+                    break
+                    
+            except Exception:
+                continue
+        
+        return jobs
 
-    def _title_from_url(self, url: str) -> str:
-        """Extract a readable title from URL path."""
-        try:
-            match = re.search(r'/position/([^/?]+)', url)
-            if match:
-                slug = match.group(1)
-                # Convert slug to title (replace dashes/underscores with spaces)
-                title = slug.replace('-', ' ').replace('_', ' ').title()
-                return title[:100]
-        except Exception:
-            pass
-        return ""
-
-    def _extract_job_id(self, url: str) -> Optional[str]:
-        """Extract job ID from Eightfold URL."""
+    def _extract_job_id(self, url: str, title: str, index: int) -> str:
+        """Extract or generate job ID."""
+        # Try to get from URL
         patterns = [
             r'/position/([A-Za-z0-9_-]+)',
             r'positionId=([A-Za-z0-9_-]+)',
-            r'/job/([A-Za-z0-9_-]+)',
+            r'id[=:]([A-Za-z0-9_-]+)',
         ]
         for pattern in patterns:
             match = re.search(pattern, url)
             if match:
                 return f"EF_{match.group(1)[:20]}"
-        return None
-
-    async def _deep_search_for_jobs(self) -> List[Job]:
-        """Deep search: enumerate all links and filter for job-like ones."""
-        jobs: List[Job] = []
         
-        try:
-            # Get ALL links on page
-            all_links = await self.page.query_selector_all('a[href]')
-            print(f"    Deep search: Found {len(all_links)} total links")
-            
-            job_link_count = 0
-            for link in all_links:
-                href = await link.get_attribute('href')
-                if not href:
-                    continue
-                
-                # Only process job-like URLs
-                href_lower = href.lower()
-                if not any(x in href_lower for x in ['/position/', 'positionid=', '/job/', '/careers/']):
-                    continue
-                if any(x in href_lower for x in ['/login', '/saved', 'javascript:', '#']):
-                    continue
-                
-                job_link_count += 1
-                
-                # Parse the link
-                job = await self._parse_link_element(link)
-                if job and job.job_url not in self.seen_urls:
-                    self.seen_urls.add(job.job_url)
-                    jobs.append(job)
-            
-            print(f"    Deep search: Found {job_link_count} job-like links, extracted {len(jobs)} jobs")
-            
-        except Exception as e:
-            print(f"    Deep search error: {e}")
-        
-        return jobs
-
-    async def _load_more_jobs(self) -> bool:
-        """Try to load more jobs via buttons or scrolling."""
-        
-        # Try load more buttons
-        load_more_selectors = [
-            'button:has-text("Load more")',
-            'button:has-text("Show more")',
-            'button:has-text("View more")',
-            '[data-test-id="load-more"]',
-            '[class*="load-more"]',
-        ]
-        
-        for selector in load_more_selectors:
-            try:
-                button = await self.page.query_selector(selector)
-                if button and await button.is_visible():
-                    disabled = await button.get_attribute('disabled')
-                    if not disabled:
-                        await button.click()
-                        await asyncio.sleep(3)
-                        return True
-            except Exception:
-                continue
-        
-        # Try pagination
-        pagination_selectors = [
-            'button[aria-label*="next" i]',
-            'a[aria-label*="next" i]',
-            '[class*="pagination"] button:last-child:not([disabled])',
-        ]
-        
-        for selector in pagination_selectors:
-            try:
-                button = await self.page.query_selector(selector)
-                if button and await button.is_visible():
-                    await button.click()
-                    await self.page.wait_for_load_state('networkidle', timeout=10000)
-                    return True
-            except Exception:
-                continue
-        
-        # Try infinite scroll
-        try:
-            old_height = await self.page.evaluate('document.body.scrollHeight')
-            await self.page.evaluate('window.scrollTo(0, document.body.scrollHeight)')
-            await asyncio.sleep(2)
-            new_height = await self.page.evaluate('document.body.scrollHeight')
-            
-            if new_height > old_height:
-                return True
-        except Exception:
-            pass
-        
-        return False
+        # Generate from title and index
+        return self.generate_job_id(url, title)
