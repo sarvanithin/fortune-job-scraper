@@ -137,3 +137,8 @@ ALL_PLATFORM_PATTERNS = {
     "phenom": PHENOM_PATTERNS,
     "successfactors": SUCCESSFACTORS_PATTERNS,
 }
+
+# Plaid - Custom React/Next.js career site
+PLAID_PATTERNS: List[str] = [
+    "plaid.com/careers",
+]

@@ -1,6 +1,6 @@
 """
 Dispatcher that routes URLs to the appropriate scraper based on platform detection.
-Supports 7+ major ATS platforms with fallback to generic scraper.
+Supports 8+ major ATS platforms with fallback to generic scraper.
 """
 from typing import Optional
 from urllib.parse import urlparse
@@ -13,6 +13,7 @@ from config import (
     ICIMS_PATTERNS,
     TALEO_PATTERNS,
     SMARTRECRUITERS_PATTERNS,
+    PLAID_PATTERNS,
 )
 from scraper.base_scraper import BaseScraper
 from scraper.generic_scraper import GenericScraper
@@ -23,6 +24,7 @@ from scraper.lever_scraper import LeverScraper
 from scraper.icims_scraper import ICIMSScraper
 from scraper.taleo_scraper import TaleoScraper
 from scraper.smartrecruiters_scraper import SmartRecruitersScraper
+from scraper.plaid_scraper import PlaidScraper
 
 
 class ScraperDispatcher:
@@ -30,6 +32,9 @@ class ScraperDispatcher:
 
     # Platform detection priority (more specific patterns first)
     PLATFORM_MATCHERS = [
+        # Specific company sites first
+        ("plaid", PLAID_PATTERNS, PlaidScraper),
+        # Major ATS platforms
         ("workday", WORKDAY_PATTERNS, WorkdayScraper),
         ("eightfold", EIGHTFOLD_PATTERNS, EightfoldScraper),
         ("greenhouse", GREENHOUSE_PATTERNS, GreenhouseScraper),
