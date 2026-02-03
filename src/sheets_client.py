@@ -183,6 +183,7 @@ class SheetsClient:
     ) -> int:
         """
         Append new jobs to the jobs sheet in batches with retry logic.
+        Adds a timestamp separator row before the jobs for easy identification.
 
         Args:
             jobs: List of job dicts with keys matching sheet columns.
@@ -197,10 +198,27 @@ class SheetsClient:
         if not jobs:
             return 0
 
+        now = datetime.utcnow()
+        now_str = now.isoformat()
+        
+        # Create timestamp separator row
+        # Format: "=== SCRAPED: Feb 03, 2026 13:00 UTC | 15 new jobs found ==="
+        separator_text = f"=== SCRAPED: {now.strftime('%b %d, %Y %H:%M')} UTC | {len(jobs)} new jobs found ==="
+        separator_row = [[
+            separator_text,  # job_id column - visible marker
+            "",  # job_title
+            "",  # company_name
+            "",  # job_url
+            "",  # career_url
+            "",  # location
+            now_str,  # date_added
+            "",  # last_seen
+            "",  # keywords
+            "separator",  # status - marks this as a separator row
+        ]]
+
         # Convert jobs to rows
         rows = []
-        now = datetime.utcnow().isoformat()
-
         for job in jobs:
             rows.append([
                 job.get("job_id", ""),
@@ -209,15 +227,32 @@ class SheetsClient:
                 job.get("job_url", ""),
                 job.get("company_career_url", ""),
                 job.get("location", ""),
-                now,  # date_added
-                now,  # last_seen
+                now_str,  # date_added
+                now_str,  # last_seen
                 ", ".join(job.get("keywords_matched", [])),
                 "active",
             ])
 
+        # First, append the separator row
+        def _append_separator():
+            result = self.sheets.values().append(
+                spreadsheetId=sheet_id,
+                range=f"{JOBS_SHEET_NAME}!A:J",
+                valueInputOption="USER_ENTERED",
+                insertDataOption="INSERT_ROWS",
+                body={"values": separator_row},
+            ).execute()
+            return result
+        
+        try:
+            retry_with_backoff(_append_separator)
+            print(f"    Added timestamp separator: {separator_text}")
+        except Exception as e:
+            print(f"    Warning: Could not add separator row: {e}")
+
         total_appended = 0
         
-        # Process in batches to avoid timeouts
+        # Process jobs in batches to avoid timeouts
         for i in range(0, len(rows), self.BATCH_SIZE):
             batch = rows[i:i + self.BATCH_SIZE]
             
