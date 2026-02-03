@@ -7,10 +7,13 @@ Based on screenshot analysis:
 - "See role" buttons link to job details
 - Hash-based URL navigation (#search)
 - Department sections (Engineering, etc.)
+
+DEBUG VERSION - Enhanced logging to troubleshoot extraction issues.
 """
 import asyncio
 import re
 from typing import List, Optional
+from urllib.parse import urlparse
 
 from playwright.async_api import async_playwright, Page, Browser
 
@@ -24,53 +27,19 @@ class PlaidScraper(BaseScraper):
     Plaid uses a custom Next.js site with job cards and "See role" buttons.
     """
 
-    # Plaid-specific selectors based on screenshot structure
-    JOB_CARD_SELECTORS = [
-        # Job card containers (each card has location + title)
+    # Plaid job link selectors - ordered by specificity
+    JOB_LINK_SELECTORS = [
+        # Direct job links
         'a[href*="/careers/openings/"]',
-        'div[class*="job-card"]',
-        'div[class*="opening"]',
-        'article[class*="job"]',
-        'article[class*="role"]',
-        # List items that look like jobs
-        'li:has(a[href*="/careers/"])',
-        'div:has(> a:has-text("See role"))',
-        # Cards with role buttons
-        '[class*="role-card"]',
-        '[class*="RoleCard"]',
-        '[class*="position-card"]',
-        # Generic patterns
-        'main a[href*="/openings/"]',
-        'section a[href*="/careers/openings/"]',
-    ]
-
-    # Selectors for finding "See role" type links
-    ROLE_LINK_SELECTORS = [
+        'a[href*="/careers/"][href*="/engineering/"]',
+        'a[href*="/careers/"][href*="/data/"]',
+        'a[href*="/careers/"][href*="/product/"]',
+        # "See role" type links
         'a:has-text("See role")',
+        'a:has-text("View role")',
         'a:has-text("Apply")',
-        'a:has-text("View")',
-        'a[href*="/openings/"]',
-        'a[href*="/careers/"][href*="/"]',
-    ]
-
-    TITLE_SELECTORS = [
-        'h2', 'h3', 'h4',
-        '[class*="title"]',
-        '[class*="Title"]',
-        '[class*="role-name"]',
-        '[class*="job-name"]',
-        'strong',
-        'span[class*="name"]',
-    ]
-
-    LOCATION_SELECTORS = [
-        '[class*="location"]',
-        '[class*="Location"]',
-        'span:has-text("New York")',
-        'span:has-text("San Francisco")',
-        'span:has-text("Remote")',
-        'div[class*="meta"]',
-        'p[class*="location"]',
+        # Generic career links
+        'a[href*="/careers/"][href*="-"]',
     ]
 
     def __init__(self, company_name: str, career_url: str):
@@ -111,8 +80,8 @@ class PlaidScraper(BaseScraper):
                 )
                 
                 # Wait for React to render
-                print(f"  [Plaid] Waiting for React to render...")
-                await asyncio.sleep(5)
+                print(f"  [Plaid] Waiting 8s for React to render...")
+                await asyncio.sleep(8)
                 
                 # Handle cookie consent if present
                 await self._dismiss_cookie_banner()
@@ -120,19 +89,13 @@ class PlaidScraper(BaseScraper):
                 # Scroll to load all content
                 await self._scroll_to_load_all()
 
-                # Extract jobs using multiple strategies
+                # Extract jobs
                 print(f"  [Plaid] Extracting jobs...")
+                jobs = await self._extract_job_links()
                 
-                # Strategy 1: Find "See role" links and parent cards
-                jobs = await self._extract_jobs_from_role_links()
-                
-                # Strategy 2: Find job cards directly
                 if not jobs:
-                    jobs = await self._extract_jobs_from_cards()
-                
-                # Strategy 3: Find all career opening links
-                if not jobs:
-                    jobs = await self._extract_jobs_from_links()
+                    print(f"  [Plaid] Primary extraction failed, trying deep search...")
+                    jobs = await self._deep_search_for_jobs()
                 
                 all_jobs.extend(jobs)
 
@@ -168,6 +131,7 @@ class PlaidScraper(BaseScraper):
                 if btn and await btn.is_visible():
                     await btn.click()
                     await asyncio.sleep(1)
+                    print(f"    Dismissed cookie banner")
                     break
         except Exception:
             pass
@@ -176,9 +140,10 @@ class PlaidScraper(BaseScraper):
         """Scroll to load all job content."""
         try:
             print(f"  [Plaid] Scrolling to load content...")
-            for _ in range(10):
-                await self.page.evaluate('window.scrollBy(0, window.innerHeight)')
-                await asyncio.sleep(0.5)
+            
+            for _ in range(15):
+                await self.page.evaluate('window.scrollBy(0, 500)')
+                await asyncio.sleep(0.3)
             
             # Scroll back to top
             await self.page.evaluate('window.scrollTo(0, 0)')
@@ -186,252 +151,208 @@ class PlaidScraper(BaseScraper):
         except Exception:
             pass
 
-    async def _extract_jobs_from_role_links(self) -> List[Job]:
-        """Extract jobs by finding 'See role' links and getting parent card info."""
+    async def _extract_job_links(self) -> List[Job]:
+        """Extract jobs by finding career links."""
         jobs: List[Job] = []
         
-        try:
-            for link_sel in self.ROLE_LINK_SELECTORS:
-                links = await self.page.query_selector_all(link_sel)
-                
-                for link in links:
-                    try:
-                        href = await link.get_attribute('href')
-                        if not href:
-                            continue
-                        
-                        job_url = self.normalize_url(href)
-                        
-                        # Must be a careers URL
-                        if '/careers/' not in job_url and '/openings/' not in job_url:
-                            continue
-                        
-                        if job_url in self.seen_urls:
-                            continue
-                        
-                        # Get the parent container for title and location
-                        parent = await link.evaluate_handle('el => el.closest("div, article, section, li")')
-                        
-                        title = ""
-                        location = ""
-                        
-                        if parent:
-                            # Extract title from parent
-                            for title_sel in self.TITLE_SELECTORS:
-                                try:
-                                    title_el = await parent.query_selector(title_sel)
-                                    if title_el:
-                                        text = await title_el.text_content()
-                                        text = self.clean_text(text) if text else ""
-                                        # Skip if it's the button text
-                                        if text and text.lower() not in ['see role', 'apply', 'view']:
-                                            if len(text) > 5 and len(text) < 150:
-                                                title = text
-                                                break
-                                except Exception:
-                                    continue
-                            
-                            # Extract location from parent
-                            for loc_sel in self.LOCATION_SELECTORS:
-                                try:
-                                    loc_el = await parent.query_selector(loc_sel)
-                                    if loc_el:
-                                        location = await loc_el.text_content()
-                                        location = self.clean_text(location) if location else ""
-                                        break
-                                except Exception:
-                                    continue
-                        
-                        # If no title from parent, try from URL
-                        if not title:
-                            title = self._extract_title_from_url(job_url)
-                        
-                        if not title or len(title) < 3:
-                            continue
-                        
-                        if title in self.seen_titles:
-                            continue
-                        
-                        self.seen_urls.add(job_url)
-                        self.seen_titles.add(title)
-                        
-                        job_id = self._extract_plaid_job_id(job_url)
-                        
-                        jobs.append(Job(
-                            job_id=job_id,
-                            job_title=title,
-                            job_url=job_url,
-                            company_name=self.company_name,
-                            company_career_url=self.career_url,
-                            location=location,
-                        ))
-                        
-                    except Exception:
-                        continue
-                
-                if jobs:
-                    print(f"    Found {len(jobs)} jobs using selector: {link_sel[:30]}...")
-                    break
-                    
-        except Exception as e:
-            print(f"    Error in role link extraction: {e}")
-        
-        return jobs
-
-    async def _extract_jobs_from_cards(self) -> List[Job]:
-        """Extract jobs from card elements."""
-        jobs: List[Job] = []
-        
-        for card_sel in self.JOB_CARD_SELECTORS:
+        for selector in self.JOB_LINK_SELECTORS:
             try:
-                cards = await self.page.query_selector_all(card_sel)
+                elements = await self.page.query_selector_all(selector)
                 
-                for card in cards:
-                    # Check if this is a link
-                    href = await card.get_attribute('href')
-                    
-                    if not href:
-                        # Find link inside card
-                        link = await card.query_selector('a[href*="/careers/"], a[href*="/openings/"]')
-                        if link:
-                            href = await link.get_attribute('href')
-                    
-                    if not href:
-                        continue
-                    
-                    job_url = self.normalize_url(href)
-                    if job_url in self.seen_urls:
-                        continue
-                    
-                    # Get title
-                    title = ""
-                    for title_sel in self.TITLE_SELECTORS:
-                        title_el = await card.query_selector(title_sel)
-                        if title_el:
-                            title = await title_el.text_content()
-                            title = self.clean_text(title) if title else ""
-                            if title and len(title) > 3:
-                                break
-                    
-                    if not title:
-                        title = await card.text_content()
-                        title = self.clean_text(title) if title else ""
-                        # Get first line only
-                        if title and '\n' in title:
-                            title = title.split('\n')[0].strip()
-                    
-                    if not title or len(title) < 3 or len(title) > 150:
-                        continue
-                    
-                    if title in self.seen_titles:
-                        continue
-                    
-                    self.seen_urls.add(job_url)
-                    self.seen_titles.add(title)
-                    
-                    # Get location
-                    location = ""
-                    for loc_sel in self.LOCATION_SELECTORS:
-                        loc_el = await card.query_selector(loc_sel)
-                        if loc_el:
-                            location = await loc_el.text_content()
-                            location = self.clean_text(location) if location else ""
-                            break
-                    
-                    job_id = self._extract_plaid_job_id(job_url)
-                    
-                    jobs.append(Job(
-                        job_id=job_id,
-                        job_title=title,
-                        job_url=job_url,
-                        company_name=self.company_name,
-                        company_career_url=self.career_url,
-                        location=location,
-                    ))
+                if elements:
+                    print(f"    Trying selector: {selector} -> {len(elements)} elements")
                 
-                if jobs:
-                    break
-                    
-            except Exception:
+                for element in elements:
+                    job = await self._parse_job_link(element, selector)
+                    if job and job.job_url not in self.seen_urls:
+                        self.seen_urls.add(job.job_url)
+                        jobs.append(job)
+                
+            except Exception as e:
                 continue
         
-        return jobs
-
-    async def _extract_jobs_from_links(self) -> List[Job]:
-        """Fallback: Extract jobs from all career links."""
-        jobs: List[Job] = []
+        # Deduplicate
+        unique_jobs = []
+        seen = set()
+        for job in jobs:
+            if job.job_url not in seen:
+                seen.add(job.job_url)
+                unique_jobs.append(job)
         
+        print(f"    Total unique jobs extracted: {len(unique_jobs)}")
+        return unique_jobs
+
+    async def _parse_job_link(self, element, selector: str) -> Optional[Job]:
+        """Parse a link element to extract job info."""
         try:
-            links = await self.page.query_selector_all('a[href*="/careers/"], a[href*="/openings/"]')
+            href = await element.get_attribute('href')
+            if not href:
+                return None
             
-            for link in links:
-                href = await link.get_attribute('href')
-                if not href:
-                    continue
-                
-                job_url = self.normalize_url(href)
-                
-                # Skip main careers page
-                if job_url.rstrip('/').endswith('/careers'):
-                    continue
-                
-                if job_url in self.seen_urls:
-                    continue
-                
-                title = await link.text_content()
-                title = self.clean_text(title) if title else ""
-                
-                # Skip generic link text
-                if title.lower() in ['see role', 'apply', 'view', 'careers', 'openings']:
-                    title = self._extract_title_from_url(job_url)
-                
-                if not title or len(title) < 3 or len(title) > 150:
-                    continue
-                
-                if title in self.seen_titles:
-                    continue
-                
-                self.seen_urls.add(job_url)
-                self.seen_titles.add(title)
-                
-                job_id = self._extract_plaid_job_id(job_url)
-                
-                jobs.append(Job(
-                    job_id=job_id,
-                    job_title=title,
-                    job_url=job_url,
-                    company_name=self.company_name,
-                    company_career_url=self.career_url,
-                ))
-                
-        except Exception as e:
-            print(f"    Link extraction error: {e}")
-        
-        return jobs
+            job_url = self.normalize_url(href)
+            
+            # Must be a careers URL
+            if '/careers/' not in job_url:
+                return None
+            
+            # Skip main careers page and non-job links
+            if job_url.rstrip('/').endswith('/careers'):
+                return None
+            if any(x in job_url.lower() for x in ['#', 'javascript:', '/apply', '/share']):
+                return None
+            
+            # Get title - depends on what kind of link this is
+            title = ""
+            
+            link_text = await element.text_content()
+            link_text = self.clean_text(link_text) if link_text else ""
+            
+            # If this is a "See role" button, get title from parent/sibling
+            if link_text.lower() in ['see role', 'view role', 'apply']:
+                title = await self._get_title_from_card(element)
+            else:
+                # Link text is the title
+                title = link_text
+            
+            # If still no title, try URL
+            if not title or len(title) < 3:
+                title = self._title_from_url(job_url)
+            
+            if not title or len(title) < 3 or len(title) > 150:
+                return None
+            
+            # Get location
+            location = await self._get_location_from_card(element)
+            
+            job_id = self._extract_job_id(job_url)
+            
+            return Job(
+                job_id=job_id,
+                job_title=title,
+                job_url=job_url,
+                company_name=self.company_name,
+                company_career_url=self.career_url,
+                location=location,
+            )
+            
+        except Exception:
+            return None
 
-    def _extract_title_from_url(self, url: str) -> str:
+    async def _get_title_from_card(self, element) -> str:
+        """Get job title from the card containing this element."""
+        try:
+            # Navigate up to find card/container
+            parent = await element.evaluate_handle('''el => {
+                let p = el.parentElement;
+                for (let i = 0; i < 5 && p; i++) {
+                    p = p.parentElement;
+                }
+                return p;
+            }''')
+            
+            if parent:
+                # Look for title-like elements
+                title_selectors = ['h2', 'h3', 'h4', 'strong', '[class*="title"]', '[class*="name"]']
+                for sel in title_selectors:
+                    try:
+                        title_el = await parent.query_selector(sel)
+                        if title_el:
+                            text = await title_el.text_content()
+                            text = self.clean_text(text) if text else ""
+                            if text and len(text) > 3 and text.lower() not in ['see role', 'apply']:
+                                return text
+                    except Exception:
+                        continue
+        except Exception:
+            pass
+        return ""
+
+    async def _get_location_from_card(self, element) -> str:
+        """Get location from the card containing this element."""
+        try:
+            parent = await element.evaluate_handle('el => el.closest("div, article, li")')
+            if parent:
+                location_indicators = ['new york', 'san francisco', 'remote', 'us', 'united states']
+                
+                # Try specific selectors
+                for sel in ['[class*="location"]', 'span', 'p']:
+                    try:
+                        loc_el = await parent.query_selector(sel)
+                        if loc_el:
+                            text = await loc_el.text_content()
+                            text = self.clean_text(text).lower() if text else ""
+                            for indicator in location_indicators:
+                                if indicator in text:
+                                    return self.clean_text(await loc_el.text_content())
+                    except Exception:
+                        continue
+        except Exception:
+            pass
+        return ""
+
+    def _title_from_url(self, url: str) -> str:
         """Extract a readable title from URL path."""
         try:
-            # Get last path segment
+            # Get path segments
             path = urlparse(url).path
-            segments = [s for s in path.split('/') if s and s not in ['careers', 'openings', 'engineering']]
+            segments = [s for s in path.split('/') if s and s not in ['careers', 'openings']]
             if segments:
                 # Convert slug to title
-                title = segments[-1].replace('-', ' ').replace('_', ' ').title()
+                slug = segments[-1]
+                title = slug.replace('-', ' ').replace('_', ' ').title()
                 return title
         except Exception:
             pass
         return ""
 
-    def _extract_plaid_job_id(self, url: str) -> str:
+    def _extract_job_id(self, url: str) -> str:
         """Extract or generate job ID for Plaid."""
         # Try to get from URL path
-        match = re.search(r'/openings/([^/\?#]+)', url)
+        match = re.search(r'/careers/[^/]+/([^/?#]+)', url)
         if match:
             return f"PL_{match.group(1)[:30]}"
         
-        match = re.search(r'/careers/([^/\?#]+)/([^/\?#]+)', url)
+        match = re.search(r'/openings/([^/?#]+)', url)
         if match:
-            return f"PL_{match.group(2)[:30]}"
+            return f"PL_{match.group(1)[:30]}"
         
         return self.generate_job_id(url, "")
+
+    async def _deep_search_for_jobs(self) -> List[Job]:
+        """Deep search: get all links and filter for career-like ones."""
+        jobs: List[Job] = []
+        
+        try:
+            # Get ALL links on page
+            all_links = await self.page.query_selector_all('a[href]')
+            print(f"    Deep search: Found {len(all_links)} total links")
+            
+            career_link_count = 0
+            for link in all_links:
+                href = await link.get_attribute('href')
+                if not href:
+                    continue
+                
+                href_lower = href.lower()
+                
+                # Only process career-like URLs
+                if '/careers/' not in href_lower:
+                    continue
+                if href.rstrip('/').endswith('/careers'):
+                    continue
+                if any(x in href_lower for x in ['#', 'javascript:']):
+                    continue
+                
+                career_link_count += 1
+                
+                job = await self._parse_job_link(link, "deep_search")
+                if job and job.job_url not in self.seen_urls:
+                    self.seen_urls.add(job.job_url)
+                    jobs.append(job)
+            
+            print(f"    Deep search: Found {career_link_count} career links, extracted {len(jobs)} jobs")
+            
+        except Exception as e:
+            print(f"    Deep search error: {e}")
+        
+        return jobs
