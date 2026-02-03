@@ -105,6 +105,12 @@ class PlaidScraper(BaseScraper):
             finally:
                 await self.browser.close()
 
+        # Debug: Print extracted titles
+        if all_jobs:
+            print(f"  [Plaid] First 5 extracted titles:")
+            for job in all_jobs[:5]:
+                print(f"    - '{job.job_title}'")
+        
         # Filter by keywords
         filtered_jobs = []
         for job in all_jobs:

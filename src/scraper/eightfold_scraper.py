@@ -133,6 +133,12 @@ class EightfoldScraper(BaseScraper):
             finally:
                 await self.browser.close()
 
+        # Debug: Print extracted titles
+        if all_jobs:
+            print(f"  [Eightfold] First 5 extracted titles:")
+            for job in all_jobs[:5]:
+                print(f"    - '{job.job_title}'")
+        
         # Filter by keywords
         filtered_jobs = []
         for job in all_jobs:
@@ -206,12 +212,17 @@ class EightfoldScraper(BaseScraper):
             # Normalize URL
             job_url = self.normalize_url(href)
             
-            # Must be a position/job URL
-            if not any(x in job_url.lower() for x in ['/position/', 'positionid=', '/job/']):
+            # Debug: print href for first few
+            if len(self.seen_urls) < 3:
+                print(f"      DEBUG href: {href[:100]}...")
+            
+            # Must be a job-like URL - relaxed patterns
+            job_patterns = ['/position/', 'positionid=', '/job/', 'intlink=', '/careers/']
+            if not any(x in job_url.lower() for x in job_patterns):
                 return None
             
             # Skip non-job links
-            skip_patterns = ['/login', '/apply/', '/saved', '/share', '/filter', 'javascript:']
+            skip_patterns = ['/login', '/saved', '/share', '/filter', 'javascript:', '/apply/']
             if any(x in job_url.lower() for x in skip_patterns):
                 return None
             
