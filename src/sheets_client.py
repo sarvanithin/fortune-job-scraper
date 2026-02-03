@@ -178,8 +178,46 @@ class SheetsClient:
             print(f"Error fetching existing jobs: {e}")
             raise
 
+    def get_scraped_companies(self, sheet_id: Optional[str] = None) -> set:
+        """
+        Get the set of company names that already have jobs in the sheet.
+        Used to determine if a company is being scraped for the first time.
+
+        Returns:
+            Set of company names that have at least one job in the sheet.
+        """
+        sheet_id = sheet_id or JOBS_SHEET_ID
+        if not sheet_id:
+            return set()
+
+        def _fetch():
+            result = self.sheets.values().get(
+                spreadsheetId=sheet_id,
+                range=f"{JOBS_SHEET_NAME}!C:C",  # Company name column
+            ).execute()
+            return result
+
+        try:
+            result = retry_with_backoff(_fetch)
+            values = result.get("values", [])
+            # Skip header, extract company names, ignore separator rows
+            companies = set()
+            for row in values[1:]:
+                if row and row[0] and not row[0].startswith("==="):
+                    companies.add(row[0])
+            return companies
+
+        except Exception as e:
+            print(f"Warning: Could not fetch scraped companies: {e}")
+            return set()
+
+
     def append_jobs(
-        self, jobs: List[Dict[str, Any]], sheet_id: Optional[str] = None
+        self, 
+        jobs: List[Dict[str, Any]], 
+        sheet_id: Optional[str] = None,
+        is_initial_load: bool = False,
+        company_name: str = "",
     ) -> int:
         """
         Append new jobs to the jobs sheet in batches with retry logic.
@@ -187,6 +225,9 @@ class SheetsClient:
 
         Args:
             jobs: List of job dicts with keys matching sheet columns.
+            sheet_id: Optional sheet ID override.
+            is_initial_load: True if this is the first scrape for a company.
+            company_name: Company name for initial load separator.
 
         Returns:
             Number of jobs appended.
@@ -202,8 +243,14 @@ class SheetsClient:
         now_str = now.isoformat()
         
         # Create timestamp separator row
-        # Format: "=== SCRAPED: Feb 03, 2026 13:00 UTC | 15 new jobs found ==="
-        separator_text = f"=== SCRAPED: {now.strftime('%b %d, %Y %H:%M')} UTC | {len(jobs)} new jobs found ==="
+        # Different text for initial load vs new jobs
+        if is_initial_load:
+            separator_text = f"=== INITIAL LOAD: {company_name} | {len(jobs)} existing roles | {now.strftime('%b %d, %Y %H:%M')} UTC ==="
+            status_marker = "initial_load"
+        else:
+            separator_text = f"=== NEW JOBS: {now.strftime('%b %d, %Y %H:%M')} UTC | {len(jobs)} new postings found ==="
+            status_marker = "separator"
+        
         separator_row = [[
             separator_text,  # job_id column - visible marker
             "",  # job_title
@@ -214,7 +261,7 @@ class SheetsClient:
             now_str,  # date_added
             "",  # last_seen
             "",  # keywords
-            "separator",  # status - marks this as a separator row
+            status_marker,  # status - marks this as a separator row
         ]]
 
         # Convert jobs to rows

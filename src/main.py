@@ -90,6 +90,7 @@ async def process_companies(
         "total_jobs_found": 0,
         "new_jobs_added": 0,
         "existing_jobs_updated": 0,
+        "initial_load_jobs": 0,
     }
 
     # Get existing job IDs for deduplication
@@ -97,8 +98,13 @@ async def process_companies(
         print("\nFetching existing jobs for deduplication...")
         existing_ids = sheets_client.get_existing_job_ids()
         print(f"Found {len(existing_ids)} existing jobs in database")
+        
+        # Get companies that have already been scraped (have jobs in sheet)
+        scraped_companies = sheets_client.get_scraped_companies()
+        print(f"Found {len(scraped_companies)} companies with existing jobs")
     else:
         existing_ids = set()
+        scraped_companies = set()
 
     # Process companies in batches
     for i in range(0, len(companies), COMPANIES_PER_BATCH):
@@ -111,6 +117,8 @@ async def process_companies(
         print(f"{'#'*60}")
 
         for company in batch:
+            company_name = company["company_name"]
+            
             try:
                 jobs = await scrape_company(company)
                 stats["companies_processed"] += 1
@@ -123,16 +131,30 @@ async def process_companies(
                     new_jobs = filter_new_jobs(job_dicts, existing_ids)
                     existing_job_ids = find_existing_jobs(job_dicts, existing_ids)
 
-                    stats["new_jobs_added"] += len(new_jobs)
+                    # Check if this is the first time scraping this company
+                    is_initial_load = company_name not in scraped_companies
+
+                    if is_initial_load:
+                        stats["initial_load_jobs"] += len(new_jobs)
+                        print(f"  [INITIAL LOAD] First time scraping {company_name}")
+                    else:
+                        stats["new_jobs_added"] += len(new_jobs)
+                    
                     stats["existing_jobs_updated"] += len(existing_job_ids)
 
                     if not dry_run:
                         # Add new jobs
                         if new_jobs:
-                            sheets_client.append_jobs(new_jobs)
+                            sheets_client.append_jobs(
+                                new_jobs,
+                                is_initial_load=is_initial_load,
+                                company_name=company_name,
+                            )
                             # Add to existing_ids to prevent duplicates within this run
                             for job in new_jobs:
                                 existing_ids.add(job["job_id"])
+                            # Mark company as scraped
+                            scraped_companies.add(company_name)
 
                         # Update last_seen for existing jobs
                         if existing_job_ids:
@@ -140,7 +162,7 @@ async def process_companies(
 
                         # Update company status
                         sheets_client.update_company_status(
-                            company["company_name"],
+                            company_name,
                             STATUS_ACTIVE,
                         )
 
@@ -238,7 +260,8 @@ async def main():
     print(f"Companies processed: {stats['companies_processed']}")
     print(f"Companies with errors: {stats['companies_with_errors']}")
     print(f"Total jobs found: {stats['total_jobs_found']}")
-    print(f"New jobs added: {stats['new_jobs_added']}")
+    print(f"Initial load jobs (new companies): {stats.get('initial_load_jobs', 0)}")
+    print(f"New job postings (existing companies): {stats['new_jobs_added']}")
     print(f"Existing jobs updated: {stats['existing_jobs_updated']}")
     print(f"Completed at: {datetime.utcnow().isoformat()}")
     print("=" * 60)
