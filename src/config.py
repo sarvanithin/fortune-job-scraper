@@ -23,7 +23,7 @@ KEYWORDS: List[str] = [
 
 # Scraping settings
 SCRAPE_DELAY_SECONDS: float = 2.0  # Delay between page loads (be respectful)
-PAGE_LOAD_TIMEOUT_MS: int = 30000  # 30 seconds for page to load
+PAGE_LOAD_TIMEOUT_MS: int = 45000  # 45 seconds for page to load (increased for slow SPAs)
 MAX_PAGES_PER_COMPANY: int = 50  # Maximum pages to scrape per company
 MAX_RETRIES: int = 3  # Retries on failure
 
@@ -44,24 +44,96 @@ STATUS_ACTIVE: str = "active"
 STATUS_REMOVED: str = "removed"
 STATUS_ERROR: str = "error"
 
-# Platform detection patterns
+# =============================================================================
+# Platform Detection Patterns
+# =============================================================================
+# Each list contains URL substrings that identify a specific ATS platform
+
+# Workday - Most common among Fortune 500
 WORKDAY_PATTERNS: List[str] = [
     "myworkdayjobs.com",
     "wd1.myworkdayjobs",
     "wd3.myworkdayjobs",
     "wd5.myworkdayjobs",
+    "workday.com/en-us/careers",
 ]
 
+# Eightfold AI - Modern AI-powered ATS
 EIGHTFOLD_PATTERNS: List[str] = [
     "eightfold.ai",
+    ".eightfold.ai/careers",
 ]
 
+# Greenhouse - Popular with tech companies
 GREENHOUSE_PATTERNS: List[str] = [
-    "greenhouse.io",
     "boards.greenhouse.io",
+    "greenhouse.io/embed",
+    "grnh.se",  # Greenhouse short URLs
 ]
 
+# Lever - Common in tech/startups
 LEVER_PATTERNS: List[str] = [
-    "lever.co",
     "jobs.lever.co",
+    "lever.co/",
 ]
+
+# iCIMS - Enterprise ATS
+ICIMS_PATTERNS: List[str] = [
+    ".icims.com",
+    "careers-icims.com",
+    "icims.com/jobs",
+]
+
+# Oracle Taleo - Legacy enterprise ATS
+TALEO_PATTERNS: List[str] = [
+    ".taleo.net",
+    "taleo.com",
+    "careersection",
+]
+
+# SmartRecruiters - Modern enterprise ATS
+SMARTRECRUITERS_PATTERNS: List[str] = [
+    "jobs.smartrecruiters.com",
+    "smartrecruiters.com/job",
+    "careers.smartrecruiters.com",
+]
+
+# Jobvite - Mid-market ATS
+JOBVITE_PATTERNS: List[str] = [
+    "jobs.jobvite.com",
+    "jobvite.com",
+]
+
+# BambooHR - HR software with ATS
+BAMBOOHR_PATTERNS: List[str] = [
+    "bamboohr.com/careers",
+    ".bamboohr.com/jobs",
+]
+
+# Phenom - Talent experience platform
+PHENOM_PATTERNS: List[str] = [
+    "phenom.com",
+    "jobs.phenom.com",
+]
+
+# SuccessFactors (SAP) - Enterprise ATS
+SUCCESSFACTORS_PATTERNS: List[str] = [
+    "successfactors.com",
+    "successfactors.eu",
+    "jobs.sap.com",
+]
+
+# All patterns for easy iteration
+ALL_PLATFORM_PATTERNS = {
+    "workday": WORKDAY_PATTERNS,
+    "eightfold": EIGHTFOLD_PATTERNS,
+    "greenhouse": GREENHOUSE_PATTERNS,
+    "lever": LEVER_PATTERNS,
+    "icims": ICIMS_PATTERNS,
+    "taleo": TALEO_PATTERNS,
+    "smartrecruiters": SMARTRECRUITERS_PATTERNS,
+    "jobvite": JOBVITE_PATTERNS,
+    "bamboohr": BAMBOOHR_PATTERNS,
+    "phenom": PHENOM_PATTERNS,
+    "successfactors": SUCCESSFACTORS_PATTERNS,
+}

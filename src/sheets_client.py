@@ -1,10 +1,13 @@
 """
 Google Sheets API client for reading company URLs and writing job listings.
+Includes retry logic with exponential backoff for reliability.
 """
 import json
 import os
+import time
+import ssl
 from datetime import datetime
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Callable
 
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
@@ -18,10 +21,61 @@ from config import (
 )
 
 
+def retry_with_backoff(
+    func: Callable,
+    max_retries: int = 5,
+    base_delay: float = 1.0,
+    max_delay: float = 60.0,
+):
+    """
+    Execute a function with exponential backoff retry logic.
+    
+    Handles common transient errors:
+    - SSL/TLS errors (EOF, connection reset)
+    - HTTP 5xx errors
+    - Rate limiting (429)
+    - Connection errors
+    """
+    last_exception = None
+    
+    for attempt in range(max_retries):
+        try:
+            return func()
+        except ssl.SSLError as e:
+            last_exception = e
+            print(f"  SSL error on attempt {attempt + 1}/{max_retries}: {e}")
+        except HttpError as e:
+            last_exception = e
+            status = e.resp.status if hasattr(e, 'resp') else 0
+            # Retry on 5xx errors and rate limiting
+            if status >= 500 or status == 429:
+                print(f"  HTTP {status} error on attempt {attempt + 1}/{max_retries}")
+            else:
+                raise  # Don't retry client errors
+        except (ConnectionError, ConnectionResetError, BrokenPipeError) as e:
+            last_exception = e
+            print(f"  Connection error on attempt {attempt + 1}/{max_retries}: {e}")
+        except Exception as e:
+            # Check for SSL-related errors in the message
+            if 'EOF' in str(e) or 'ssl' in str(e).lower() or 'connection' in str(e).lower():
+                last_exception = e
+                print(f"  Transient error on attempt {attempt + 1}/{max_retries}: {e}")
+            else:
+                raise  # Don't retry unknown errors
+        
+        if attempt < max_retries - 1:
+            delay = min(base_delay * (2 ** attempt), max_delay)
+            print(f"  Retrying in {delay:.1f}s...")
+            time.sleep(delay)
+    
+    raise last_exception
+
+
 class SheetsClient:
-    """Client for interacting with Google Sheets API."""
+    """Client for interacting with Google Sheets API with retry logic."""
 
     SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
+    BATCH_SIZE = 100  # Max rows per API call
 
     def __init__(self, credentials_path: Optional[str] = None):
         """
@@ -65,12 +119,15 @@ class SheetsClient:
         if not sheet_id:
             raise ValueError("COMPANIES_SHEET_ID not configured")
 
-        try:
+        def _fetch():
             result = self.sheets.values().get(
                 spreadsheetId=sheet_id,
                 range=f"{COMPANIES_SHEET_NAME}!A:E",
             ).execute()
+            return result
 
+        try:
+            result = retry_with_backoff(_fetch)
             values = result.get("values", [])
             if not values:
                 return []
@@ -89,7 +146,7 @@ class SheetsClient:
 
             return companies
 
-        except HttpError as e:
+        except Exception as e:
             print(f"Error fetching companies: {e}")
             raise
 
@@ -104,17 +161,20 @@ class SheetsClient:
         if not sheet_id:
             raise ValueError("JOBS_SHEET_ID not configured")
 
-        try:
+        def _fetch():
             result = self.sheets.values().get(
                 spreadsheetId=sheet_id,
                 range=f"{JOBS_SHEET_NAME}!A:A",
             ).execute()
+            return result
 
+        try:
+            result = retry_with_backoff(_fetch)
             values = result.get("values", [])
             # Skip header, extract job IDs
             return {row[0] for row in values[1:] if row}
 
-        except HttpError as e:
+        except Exception as e:
             print(f"Error fetching existing jobs: {e}")
             raise
 
@@ -122,7 +182,7 @@ class SheetsClient:
         self, jobs: List[Dict[str, Any]], sheet_id: Optional[str] = None
     ) -> int:
         """
-        Append new jobs to the jobs sheet.
+        Append new jobs to the jobs sheet in batches with retry logic.
 
         Args:
             jobs: List of job dicts with keys matching sheet columns.
@@ -155,21 +215,34 @@ class SheetsClient:
                 "active",
             ])
 
-        try:
-            result = self.sheets.values().append(
-                spreadsheetId=sheet_id,
-                range=f"{JOBS_SHEET_NAME}!A:J",
-                valueInputOption="USER_ENTERED",
-                insertDataOption="INSERT_ROWS",
-                body={"values": rows},
-            ).execute()
+        total_appended = 0
+        
+        # Process in batches to avoid timeouts
+        for i in range(0, len(rows), self.BATCH_SIZE):
+            batch = rows[i:i + self.BATCH_SIZE]
+            
+            def _append_batch():
+                result = self.sheets.values().append(
+                    spreadsheetId=sheet_id,
+                    range=f"{JOBS_SHEET_NAME}!A:J",
+                    valueInputOption="USER_ENTERED",
+                    insertDataOption="INSERT_ROWS",
+                    body={"values": batch},
+                ).execute()
+                return result
 
-            updates = result.get("updates", {})
-            return updates.get("updatedRows", 0)
+            try:
+                result = retry_with_backoff(_append_batch)
+                updates = result.get("updates", {})
+                batch_count = updates.get("updatedRows", 0)
+                total_appended += batch_count
+                print(f"    Wrote batch {i // self.BATCH_SIZE + 1}: {batch_count} jobs")
+            except Exception as e:
+                print(f"    Error writing batch {i // self.BATCH_SIZE + 1}: {e}")
+                # Continue with next batch even if this one fails
+                continue
 
-        except HttpError as e:
-            print(f"Error appending jobs: {e}")
-            raise
+        return total_appended
 
     def update_company_status(
         self,
@@ -182,7 +255,7 @@ class SheetsClient:
         if not sheet_id:
             return
 
-        try:
+        def _update():
             # First, find the row for this company
             result = self.sheets.values().get(
                 spreadsheetId=sheet_id,
@@ -205,7 +278,9 @@ class SheetsClient:
                     body={"values": [[now, status]]},
                 ).execute()
 
-        except HttpError as e:
+        try:
+            retry_with_backoff(_update)
+        except Exception as e:
             print(f"Error updating company status: {e}")
 
     def update_job_last_seen(
@@ -216,7 +291,7 @@ class SheetsClient:
         if not sheet_id or not job_ids:
             return
 
-        try:
+        def _update():
             # Get all job IDs with their row numbers
             result = self.sheets.values().get(
                 spreadsheetId=sheet_id,
@@ -244,5 +319,7 @@ class SheetsClient:
                     },
                 ).execute()
 
-        except HttpError as e:
+        try:
+            retry_with_backoff(_update)
+        except Exception as e:
             print(f"Error updating job last_seen: {e}")
