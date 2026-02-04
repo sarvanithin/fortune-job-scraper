@@ -242,13 +242,20 @@ class SheetsClient:
         now = datetime.utcnow()
         now_str = now.isoformat()
         
+        # Calculate quarter time range (6-hour blocks)
+        hour = now.hour
+        quarter_start = (hour // 6) * 6
+        quarter_end = quarter_start + 6
+        quarter_name = f"Q{(hour // 6) + 1}"  # Q1, Q2, Q3, Q4
+        
         # Create timestamp separator row
+        # Using '---' prefix instead of '===' to avoid Google Sheets formula error
         # Different text for initial load vs new jobs
         if is_initial_load:
-            separator_text = f"=== INITIAL LOAD: {company_name} | {len(jobs)} existing roles | {now.strftime('%b %d, %Y %H:%M')} UTC ==="
+            separator_text = f"--- INITIAL LOAD: {company_name} | {len(jobs)} existing roles | {now.strftime('%b %d, %Y')} {quarter_start:02d}:00-{quarter_end:02d}:00 UTC ({quarter_name}) ---"
             status_marker = "initial_load"
         else:
-            separator_text = f"=== NEW JOBS: {now.strftime('%b %d, %Y %H:%M')} UTC | {len(jobs)} new postings found ==="
+            separator_text = f"--- NEW JOBS {quarter_name}: {now.strftime('%b %d, %Y')} {quarter_start:02d}:00-{quarter_end:02d}:00 UTC | {len(jobs)} new postings ---"
             status_marker = "separator"
         
         separator_row = [[
