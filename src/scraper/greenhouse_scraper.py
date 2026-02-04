@@ -100,6 +100,16 @@ class GreenhouseScraper(BaseScraper):
                 location_data = job_data.get("location", {})
                 location = location_data.get("name", "") if isinstance(location_data, dict) else str(location_data)
                 
+                # Extract posted date from updated_at
+                updated_at = job_data.get("updated_at", "")
+                posted_date = ""
+                if updated_at:
+                    # Format: 2024-01-15T12:00:00-00:00
+                    try:
+                        posted_date = updated_at.split("T")[0]  # Get just the date part
+                    except:
+                        posted_date = ""
+                
                 all_jobs.append(Job(
                     job_id=job_id,
                     job_title=title,
@@ -107,6 +117,7 @@ class GreenhouseScraper(BaseScraper):
                     company_name=self.company_name,
                     company_career_url=self.career_url,
                     location=location,
+                    posted_date=posted_date,
                     keywords_matched=matched_keywords,
                 ))
             

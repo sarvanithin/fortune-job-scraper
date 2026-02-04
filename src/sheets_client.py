@@ -265,6 +265,7 @@ class SheetsClient:
             "",  # job_url
             "",  # career_url
             "",  # location
+            "",  # posted_date
             now_str,  # date_added
             "",  # last_seen
             "",  # keywords
@@ -274,6 +275,7 @@ class SheetsClient:
         # Convert jobs to rows
         rows = []
         for job in jobs:
+            posted_date = job.get("posted_date", "")
             rows.append([
                 job.get("job_id", ""),
                 job.get("job_title", ""),
@@ -281,6 +283,7 @@ class SheetsClient:
                 job.get("job_url", ""),
                 job.get("company_career_url", ""),
                 job.get("location", ""),
+                posted_date if posted_date else "Not Available",  # posted_date
                 now_str,  # date_added
                 now_str,  # last_seen
                 ", ".join(job.get("keywords_matched", [])),
@@ -291,7 +294,7 @@ class SheetsClient:
         def _append_separator():
             result = self.sheets.values().append(
                 spreadsheetId=sheet_id,
-                range=f"{JOBS_SHEET_NAME}!A:J",
+                range=f"{JOBS_SHEET_NAME}!A:K",
                 valueInputOption="USER_ENTERED",
                 insertDataOption="INSERT_ROWS",
                 body={"values": separator_row},
@@ -313,7 +316,7 @@ class SheetsClient:
             def _append_batch():
                 result = self.sheets.values().append(
                     spreadsheetId=sheet_id,
-                    range=f"{JOBS_SHEET_NAME}!A:J",
+                    range=f"{JOBS_SHEET_NAME}!A:K",
                     valueInputOption="USER_ENTERED",
                     insertDataOption="INSERT_ROWS",
                     body={"values": batch},

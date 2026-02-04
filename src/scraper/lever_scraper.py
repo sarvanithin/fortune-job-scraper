@@ -101,6 +101,18 @@ class LeverScraper(BaseScraper):
                 categories = posting.get("categories", {})
                 location = categories.get("location", "") if isinstance(categories, dict) else ""
                 
+                # Extract posted date from createdAt timestamp
+                created_at = posting.get("createdAt")
+                posted_date = ""
+                if created_at:
+                    # createdAt is in milliseconds since epoch
+                    try:
+                        from datetime import datetime
+                        dt = datetime.fromtimestamp(created_at / 1000)
+                        posted_date = dt.strftime("%Y-%m-%d")
+                    except:
+                        posted_date = ""
+                
                 all_jobs.append(Job(
                     job_id=job_id,
                     job_title=title,
@@ -108,6 +120,7 @@ class LeverScraper(BaseScraper):
                     company_name=self.company_name,
                     company_career_url=self.career_url,
                     location=location,
+                    posted_date=posted_date,
                     keywords_matched=matched_keywords,
                 ))
             

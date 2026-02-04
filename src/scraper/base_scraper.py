@@ -21,6 +21,7 @@ class Job:
     company_name: str
     company_career_url: str
     location: str = ""
+    posted_date: str = ""  # Date job was posted (if available)
     keywords_matched: List[str] = field(default_factory=list)
 
     def to_dict(self) -> dict:
@@ -32,6 +33,7 @@ class Job:
             "company_name": self.company_name,
             "company_career_url": self.company_career_url,
             "location": self.location,
+            "posted_date": self.posted_date,
             "keywords_matched": self.keywords_matched,
         }
 
