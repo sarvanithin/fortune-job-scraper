@@ -1,0 +1,290 @@
+Company Name,Career Search URL,Platform Type
+Amazon,https://www.amazon.jobs/en/search?base_query=data&loc_query=United+States,custom
+Google,https://www.google.com/about/careers/applications/jobs/results/?location=United%20States&q=data,custom
+Microsoft,https://careers.microsoft.com/us/en/search-results?keywords=data&location=United%20States,custom
+Meta,https://www.metacareers.com/jobs?q=data&location=United%20States,custom
+Apple,https://jobs.apple.com/en-us/search?search=data&sort=relevance&location=united-states-USA,custom
+Netflix,https://jobs.netflix.com/search?q=data&location=United%20States,custom
+Salesforce,https://careers.salesforce.com/en/jobs/?search=data&location=United%20States,custom
+Adobe,https://careers.adobe.com/us/en/search-results?keywords=data&location=United%20States,workday
+Oracle,https://careers.oracle.com/jobs/#en/sites/jobsearch/requisitions?keyword=data&location=United%20States&locationId=300000000149325,custom
+IBM,https://www.ibm.com/employment/#jobs?search=data&location=United%20States,custom
+Intel,https://jobs.intel.com/en/search-jobs/data/united%20states/599/1/2/6252001/37/-122/50/2,custom
+Cisco,https://jobs.cisco.com/jobs/SearchJobs/data?3_109_3=United%20States,custom
+NVIDIA,https://nvidia.wd5.myworkdayjobs.com/en-US/NVIDIAExternalCareerSite?q=data&locations=91336993fab910af6d701bd1d8da08b5,workday
+Uber,https://www.uber.com/us/en/careers/list/?query=data&location=United%20States,custom
+Lyft,https://www.lyft.com/careers#openings?search=data,custom
+Airbnb,https://careers.airbnb.com/positions/?location=United%20States&team=&keywords=data,greenhouse
+Stripe,https://stripe.com/jobs/search?q=data&locations=North%20America--United%20States,custom
+Square,https://careers.squareup.com/us/en/jobs?q=data&location=United%20States,custom
+PayPal,https://paypal.eightfold.ai/careers?query=data&location=United%20States,eightfold
+Intuit,https://jobs.intuit.com/search-jobs/data/27595/1/2/6252001/37/-122/50/2,custom
+Workday,https://workday.wd5.myworkdayjobs.com/en-US/Workday?q=data&locations=cdaca0e4700301ecf2610083bc0144e0,workday
+ServiceNow,https://careers.servicenow.com/jobs/search?q=data&location=United%20States,custom
+Splunk,https://jobs.jobvite.com/splunk/search?q=data&l=United%20States,jobvite
+Snowflake,https://careers.snowflake.com/us/en/search-results?keywords=data&location=United%20States,custom
+Databricks,https://www.databricks.com/company/careers/open-positions?q=data&location=United%20States,lever
+MongoDB,https://www.mongodb.com/company/careers/jobs?query=data&location=United%20States,greenhouse
+Confluent,https://jobs.lever.co/confluent?location=United%20States&team=Engineering,lever
+Elastic,https://jobs.elastic.co/jobs?q=data&location=United%20States,greenhouse
+Cloudflare,https://www.cloudflare.com/careers/jobs/?q=data&location=United%20States,greenhouse
+Twilio,https://www.twilio.com/company/jobs?q=data&location=United%20States,greenhouse
+Okta,https://www.okta.com/company/careers/?q=data&location=United%20States,custom
+Zoom,https://careers.zoom.us/jobs/search?q=data&location=United%20States,custom
+Dropbox,https://www.dropbox.com/jobs/all-jobs?q=data&location=United%20States,greenhouse
+DocuSign,https://careers.docusign.com/jobs/search?q=data&location=United%20States,custom
+Atlassian,https://www.atlassian.com/company/careers/all-jobs?search=data&location=United%20States,custom
+Slack,https://slack.com/careers#openings?q=data&location=United%20States,greenhouse
+Palantir,https://jobs.lever.co/palantir?location=United%20States&team=Engineering,lever
+Coinbase,https://www.coinbase.com/careers/positions?q=data&location=United%20States,custom
+Robinhood,https://robinhood.com/us/en/careers/openings/?query=data&location=United%20States,greenhouse
+Figma,https://www.figma.com/careers/#job-openings?q=data,custom
+Canva,https://www.canva.com/careers/jobs/?search=data&location=United%20States,custom
+Notion,https://www.notion.so/careers?q=data&location=United%20States,custom
+Airtable,https://airtable.com/careers?q=data&location=United%20States,custom
+Asana,https://asana.com/jobs/all?q=data&location=United%20States,custom
+Monday.com,https://monday.com/careers?q=data&location=United%20States,custom
+Miro,https://miro.com/careers/?q=data&location=United%20States,custom
+Linear,https://linear.app/careers?q=data,custom
+Vercel,https://vercel.com/careers?q=data,custom
+Supabase,https://supabase.com/careers?q=data,custom
+PlanetScale,https://planetscale.com/careers?q=data,custom
+Retool,https://retool.com/careers?q=data,custom
+Amplitude,https://amplitude.com/careers?q=data&location=United%20States,custom
+Segment,https://segment.com/careers/?q=data,custom
+Mixpanel,https://mixpanel.com/careers/?q=data,custom
+LaunchDarkly,https://launchdarkly.com/careers/?q=data,custom
+HashiCorp,https://www.hashicorp.com/careers?q=data&location=United%20States,custom
+GitLab,https://about.gitlab.com/jobs/all-jobs/?search=data&location=United%20States,custom
+GitHub,https://www.github.careers/careers-home/jobs?q=data&location=United%20States,custom
+Automattic,https://automattic.com/work-with-us/?q=data,custom
+Reddit,https://www.redditinc.com/careers?q=data&location=United%20States,custom
+Pinterest,https://www.pinterestcareers.com/jobs/?q=data&location=United%20States,custom
+Snap,https://careers.snap.com/jobs?q=data&location=United%20States,custom
+Discord,https://discord.com/careers?q=data&location=United%20States,custom
+Twitter/X,https://careers.twitter.com/en/jobs.html#702.8-80.3&q=data,custom
+LinkedIn,https://www.linkedin.com/jobs/linkedin-jobs-worldwide/?keywords=data&location=United%20States,custom
+Indeed,https://www.indeed.com/cmp/Indeed/jobs?q=data&l=United%20States,custom
+Glassdoor,https://www.glassdoor.com/Jobs/Glassdoor-Jobs-E100431.htm?filter.keyword=data,custom
+ZipRecruiter,https://www.ziprecruiter.com/careers/?search=data,custom
+DoorDash,https://careers.doordash.com/jobs/search?query=data&location=United%20States,lever
+Instacart,https://careers.instacart.com/jobs/search?query=data&location=United%20States,lever
+Grubhub,https://careers.grubhub.com/jobs/?q=data&location=United%20States,custom
+Postmates,https://postmates.com/careers?q=data,custom
+Gopuff,https://jobs.lever.co/gopuff?department=Data&location=United%20States,lever
+Toast,https://careers.toasttab.com/jobs/search?q=data&location=United%20States,custom
+Shopify,https://www.shopify.com/careers/search?q=data&location=United%20States,custom
+Squarespace,https://www.squarespace.com/about/careers?q=data&location=United%20States,custom
+BigCommerce,https://careers.bigcommerce.com/jobs/?q=data&location=United%20States,custom
+Wix,https://www.wix.com/jobs/locations/usa?q=data,custom
+Webflow,https://webflow.com/careers?q=data,custom
+HubSpot,https://www.hubspot.com/careers/jobs?q=data&location=United%20States,custom
+Mailchimp,https://mailchimp.com/jobs/?search=data&location=United%20States,custom
+Zendesk,https://jobs.zendesk.com/us/en/search-results?keywords=data&location=United%20States,custom
+Freshworks,https://careers.freshworks.com/jobs/?q=data&location=United%20States,custom
+Intercom,https://www.intercom.com/careers?q=data&location=United%20States,custom
+Drift,https://www.drift.com/company/careers/?q=data&location=United%20States,custom
+Braze,https://www.braze.com/company/careers?q=data&location=United%20States,custom
+Klaviyo,https://www.klaviyo.com/careers?q=data&location=United%20States,custom
+Sprinklr,https://www.sprinklr.com/careers/?q=data&location=United%20States,custom
+Sprout Social,https://sproutsocial.com/careers/?search=data&location=United%20States,custom
+Hootsuite,https://careers.hootsuite.com/jobs/search?q=data,custom
+Buffer,https://buffer.com/journey?q=data,custom
+Later,https://later.com/careers?q=data,custom
+Samsara,https://www.samsara.com/company/careers?q=data&location=United%20States,custom
+Verkada,https://www.verkada.com/careers/?q=data&location=United%20States,custom
+Scale AI,https://scale.com/careers?q=data&location=United%20States,custom
+Labelbox,https://labelbox.com/company/careers/?q=data,custom
+Weights & Biases,https://wandb.ai/careers?q=data,custom
+Hugging Face,https://huggingface.co/jobs?q=data,custom
+OpenAI,https://openai.com/careers/search?q=data,custom
+Anthropic,https://www.anthropic.com/careers#open-roles?q=data,custom
+Cohere,https://cohere.com/careers?q=data,custom
+Stability AI,https://stability.ai/careers?q=data,custom
+Midjourney,https://www.midjourney.com/careers?q=data,custom
+Runway,https://runwayml.com/careers?q=data,custom
+Jasper AI,https://www.jasper.ai/careers?q=data,custom
+Copy.ai,https://www.copy.ai/careers?q=data,custom
+Grammarly,https://www.grammarly.com/jobs/openings?q=data&location=United%20States,custom
+Duolingo,https://careers.duolingo.com/?q=data&location=United%20States,custom
+Coursera,https://about.coursera.org/careers/jobs/?q=data&location=United%20States,custom
+Udemy,https://about.udemy.com/careers/?search=data&location=United%20States,custom
+Chegg,https://www.chegg.com/about/careers/?search=data&location=United%20States,custom
+Quizlet,https://quizlet.com/careers?q=data&location=United%20States,custom
+Khan Academy,https://www.khanacademy.org/careers?q=data,custom
+Masterclass,https://www.masterclass.com/careers?q=data,custom
+Calm,https://www.calm.com/careers?q=data&location=United%20States,custom
+Headspace,https://www.headspace.com/join-us?q=data&location=United%20States,custom
+Noom,https://www.noom.com/careers/?search=data&location=United%20States,custom
+Peloton,https://www.onepeloton.com/careers?q=data&location=United%20States,custom
+Strava,https://www.strava.com/careers?q=data&location=United%20States,custom
+Zwift,https://www.zwift.com/careers?q=data,custom
+Waze,https://www.waze.com/jobs?q=data,custom
+Tesla,https://www.tesla.com/careers/search?query=data&location=United%20States,custom
+SpaceX,https://www.spacex.com/careers/?search=data&location=United%20States,custom
+Rivian,https://rivian.com/careers?q=data&location=United%20States,custom
+Lucid Motors,https://www.lucidmotors.com/careers?q=data&location=United%20States,custom
+Aurora,https://aurora.tech/careers?q=data&location=United%20States,custom
+Waymo,https://waymo.com/careers/#jobs?q=data&location=United%20States,custom
+Cruise,https://www.getcruise.com/careers/jobs?q=data&location=United%20States,custom
+Argo AI,https://www.argo.ai/join-us/?q=data&location=United%20States,custom
+Nuro,https://www.nuro.ai/careers?q=data&location=United%20States,custom
+Zoox,https://zoox.com/careers/?q=data&location=United%20States,custom
+Bird,https://www.bird.co/careers?q=data&location=United%20States,custom
+Lime,https://www.li.me/careers?q=data&location=United%20States,custom
+ChargePoint,https://www.chargepoint.com/about/careers?q=data&location=United%20States,custom
+Sila Nanotechnologies,https://silanano.com/careers?q=data&location=United%20States,custom
+QuantumScape,https://www.quantumscape.com/careers?q=data&location=United%20States,custom
+Bloomberg,https://careers.bloomberg.com/job/search?q=data&location=United%20States,custom
+Thomson Reuters,https://careers.thomsonreuters.com/us/en/search-results?keywords=data&location=United%20States,custom
+FactSet,https://www.factset.com/careers?q=data&location=United%20States,custom
+S&P Global,https://careers.spglobal.com/jobs?keywords=data&location=United%20States,custom
+Moody's,https://careers.moodys.com/jobs?keywords=data&location=United%20States,custom
+MSCI,https://careers.msci.com/ListJobs?keyword=data&location=United%20States,custom
+BlackRock,https://careers.blackrock.com/job-search-results/?keyword=data&location=United%20States,custom
+Vanguard,https://www.vanguardjobs.com/search-jobs?keywords=data&location=United%20States,custom
+Fidelity,https://jobs.fidelity.com/jobs/?q=data&location=United%20States,custom
+Charles Schwab,https://jobs.schwabjobs.com/search?q=data&location=United%20States,custom
+T. Rowe Price,https://troweprice.wd5.myworkdayjobs.com/en-US/TRowePrice?q=data&locations=e1e46b4b09d00127e3ba20f51a370000,workday
+State Street,https://statestreet.wd1.myworkdayjobs.com/en-US/Global?q=data,workday
+Northern Trust,https://careers.northerntrust.com/search/?q=data&location=United%20States,custom
+BNY Mellon,https://bnymellon.eightfold.ai/careers?query=data&location=United%20States,eightfold
+Capital One,https://www.capitalonecareers.com/search-jobs?q=data&location=United%20States,custom
+JPMorgan Chase,https://jpmc.fa.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1001/requisitions?keyword=data&location=United%20States,custom
+Goldman Sachs,https://www.goldmansachs.com/careers/find-a-job?q=data&location=United%20States,custom
+Morgan Stanley,https://morganstanley.eightfold.ai/careers?query=data&location=United%20States,eightfold
+Bank of America,https://careers.bankofamerica.com/en-us/search-results?keywords=data&location=United%20States,custom
+Citigroup,https://jobs.citi.com/search?q=data&location=United%20States,custom
+Wells Fargo,https://www.wellsfargojobs.com/en/jobs/?search=data&location=United%20States,custom
+AmericanExpress,https://aexp.eightfold.ai/careers?query=data&location=United%20States,eightfold
+Visa,https://usa.visa.com/careers/job-search.html?query=data&location=United%20States,custom
+Mastercard,https://mastercard.wd1.myworkdayjobs.com/en-US/CorporateCareers?q=data&locations=c4f78be1a8f14e3eb8f0f00c16846c37,workday
+Discover,https://jobs.discover.com/jobs?q=data&location=United%20States,custom
+Synchrony,https://synchronycareers.com/search/?q=data&location=United%20States,custom
+Klarna,https://www.klarna.com/careers/jobs/?q=data&location=United%20States,custom
+Affirm,https://boards.greenhouse.io/affirm?q=data&location=United%20States,greenhouse
+Afterpay,https://www.afterpay.com/en-US/careers?q=data,custom
+Chime,https://www.chime.com/careers/?q=data&location=United%20States,custom
+SoFi,https://www.sofi.com/careers/?q=data&location=United%20States,custom
+Marcus by Goldman,https://www.marcus.com/us/en/careers?q=data,custom
+Betterment,https://www.betterment.com/careers?q=data&location=United%20States,custom
+Wealthfront,https://www.wealthfront.com/careers?q=data,custom
+Acorns,https://www.acorns.com/careers?q=data,custom
+Personal Capital,https://www.personalcapital.com/careers?q=data,custom
+Mint,https://mint.intuit.com/careers?q=data,custom
+Experian,https://www.experianplc.com/careers?q=data&location=United%20States,custom
+Equifax,https://careers.equifax.com/jobs?keywords=data&location=United%20States,custom
+TransUnion,https://transunion.wd5.myworkdayjobs.com/en-US/TransUnion?q=data&locations=a32bef7007ce01c6f0a10c45bce00000,workday
+Fair Isaac (FICO),https://www.fico.com/careers?q=data&location=United%20States,custom
+LexisNexis,https://relx.wd3.myworkdayjobs.com/en-US/LexisNexisLegal?q=data,workday
+Dun & Bradstreet,https://dnb.wd1.myworkdayjobs.com/en-US/DNB?q=data,workday
+Verisk,https://verisk.wd1.myworkdayjobs.com/en-US/Verisk?q=data,workday
+Costar Group,https://www.costargroup.com/careers?q=data,custom
+Zillow,https://www.zillow.com/careers/jobs/?q=data&location=United%20States,custom
+Redfin,https://www.redfin.com/about/careers?q=data&location=United%20States,custom
+Compass,https://www.compass.com/careers/?q=data&location=United%20States,custom
+Opendoor,https://www.opendoor.com/careers?q=data&location=United%20States,custom
+Offerpad,https://www.offerpad.com/careers?q=data,custom
+Rocket Companies,https://www.myrocketcareer.com/Jobs?q=data&location=United%20States,custom
+Better.com,https://better.com/careers?q=data&location=United%20States,custom
+LoanDepot,https://www.loandepot.com/careers?q=data&location=United%20States,custom
+United Health,https://careers.unitedhealthgroup.com/search?q=data&location=United%20States,custom
+Anthem,https://careers.antheminc.com/jobs?keywords=data&location=United%20States,custom
+Cigna,https://jobs.cigna.com/us/en/search-results?keywords=data&location=United%20States,custom
+Humana,https://careers.humana.com/job-search-results/?keyword=data&location=United%20States,custom
+Aetna,https://aetna.jobs/jobs/?q=data&location=United%20States,custom
+Kaiser Permanente,https://www.kaiserpermanentejobs.org/search?q=data&location=United%20States,custom
+CVS Health,https://jobs.cvshealth.com/search?q=data&location=United%20States,custom
+Walgreens,https://jobs.walgreens.com/search?q=data&location=United%20States,custom
+McKesson,https://mckesson.wd3.myworkdayjobs.com/en-US/External_Careers?q=data,workday
+Cardinal Health,https://jobs.cardinalhealth.com/search?q=data&location=United%20States,custom
+AmerisourceBergen,https://careers.amerisourcebergen.com/search?q=data&location=United%20States,custom
+Johnson & Johnson,https://jobs.jnj.com/en/jobs/?q=data&location=United%20States,custom
+Pfizer,https://pfizer.wd1.myworkdayjobs.com/en-US/PfizerCareers?q=data,workday
+Merck,https://jobs.merck.com/us/en/search-results?keywords=data&location=United%20States,custom
+AbbVie,https://careers.abbvie.com/en/jobs?keywords=data&location=United%20States,custom
+Bristol-Myers Squibb,https://careers.bms.com/jobs?keywords=data&location=United%20States,custom
+Eli Lilly,https://careers.lilly.com/us/en/search-results?keywords=data&location=United%20States,custom
+Amgen,https://careers.amgen.com/en/search-results?keywords=data&location=United%20States,custom
+Gilead Sciences,https://gilead.wd1.myworkdayjobs.com/en-US/External?q=data,workday
+Biogen,https://biogen.wd1.myworkdayjobs.com/en-US/biogen?q=data,workday
+Regeneron,https://careers.regeneron.com/search?q=data&location=United%20States,custom
+Vertex Pharmaceuticals,https://jobs.vrtx.com/search?q=data&location=United%20States,custom
+Moderna,https://modernatx.eightfold.ai/careers?query=data&location=United%20States,eightfold
+BioNTech,https://jobs.biontech.com/search?q=data&location=United%20States,custom
+Illumina,https://illumina.wd1.myworkdayjobs.com/en-US/illumina-careers?q=data,workday
+Thermo Fisher Scientific,https://jobs.thermofisher.com/global/en/search-results?keywords=data&location=United%20States,custom
+Danaher,https://jobs.danaher.com/global/en/search-results?keywords=data&location=United%20States,custom
+Agilent,https://careers.agilent.com/search?q=data&location=United%20States,custom
+Waters Corporation,https://www.waters.com/waters/en_US/Careers?q=data,custom
+PerkinElmer,https://perkinelmer.wd1.myworkdayjobs.com/en-US/PKI?q=data,workday
+Bio-Rad,https://careers.bio-rad.com/us/en/search-results?keywords=data&location=United%20States,custom
+IQVIA,https://jobs.iqvia.com/search?q=data&location=United%20States,custom
+Veeva Systems,https://careers.veeva.com/job-search-results/?q=data&location=United%20States,custom
+Epic Systems,https://epic.com/careers?q=data&location=United%20States,custom
+Cerner,https://careers.cerner.com/search?q=data&location=United%20States,custom
+Medidata,https://www.medidata.com/en/about/careers?q=data,custom
+Health Catalyst,https://www.healthcatalyst.com/company/careers?q=data&location=United%20States,custom
+Tempus,https://www.tempus.com/careers?q=data&location=United%20States,custom
+Flatiron Health,https://flatiron.com/careers/?q=data,custom
+Oscar Health,https://www.hioscar.com/careers?q=data&location=United%20States,custom
+Clover Health,https://www.cloverhealth.com/careers?q=data&location=United%20States,custom
+Devoted Health,https://www.devoted.com/careers?q=data,custom
+Bright Health,https://www.brighthealthcare.com/careers?q=data,custom
+Walmart,https://careers.walmart.com/us/jobs?q=data&location=United%20States,custom
+Target,https://jobs.target.com/search?q=data&location=United%20States,custom
+Costco,https://www.costco.com/jobs.html?q=data&location=United%20States,custom
+Home Depot,https://careers.homedepot.com/job-search-results/?keyword=data&location=United%20States,custom
+Lowe's,https://talent.lowes.com/us/en/search-results?keywords=data&location=United%20States,custom
+Best Buy,https://jobs.bestbuy.com/bby?q=data&location=United%20States,custom
+Wayfair,https://www.wayfair.com/careers/jobs?q=data&location=United%20States,custom
+Etsy,https://careers.etsy.com/global/en/search-results?keywords=data&location=United%20States,custom
+eBay,https://jobs.ebayinc.com/us/en/search-results?keywords=data&location=United%20States,custom
+Chewy,https://careers.chewy.com/us/en/search-results?keywords=data&location=United%20States,custom
+Petsmart,https://jobs.petsmart.com/search?q=data&location=United%20States,custom
+Petco,https://careers.petco.com/search?q=data&location=United%20States,custom
+Williams-Sonoma,https://careers.williams-sonomainc.com/jobs?keywords=data&location=United%20States,custom
+Nordstrom,https://nordstrom.wd5.myworkdayjobs.com/en-US/External?q=data,workday
+Macy's,https://www.macysjobs.com/jobs?q=data&location=United%20States,custom
+Kohl's,https://careers.kohls.com/search?q=data&location=United%20States,custom
+Gap Inc,https://jobs.gapinc.com/jobs?q=data&location=United%20States,custom
+Nike,https://jobs.nike.com/search?q=data&location=United%20States,custom
+Adidas,https://careers.adidas-group.com/teams/by-location/united-states?search=data,custom
+Under Armour,https://underarmour.wd1.myworkdayjobs.com/en-US/Under_Armour?q=data,workday
+Lululemon,https://careers.lululemon.com/en/jobs?q=data&location=United%20States,custom
+VF Corporation,https://vfc.wd5.myworkdayjobs.com/en-US/VFCGLOBAL?q=data,workday
+Ralph Lauren,https://careers.ralphlauren.com/Careers/Search?q=data&location=United%20States,custom
+PVH Corp,https://pvh.wd1.myworkdayjobs.com/en-US/Global?q=data,workday
+Hanesbrands,https://hanesbrandsinc.jobs/search?q=data&location=United%20States,custom
+Starbucks,https://starbucks.wd1.myworkdayjobs.com/en-US/External?q=data,workday
+McDonald's,https://careers.mcdonalds.com/corporate/jobs?keywords=data&location=United%20States,custom
+Chipotle,https://jobs.chipotle.com/search?q=data&location=United%20States,custom
+Yum! Brands,https://jobs.yum.com/jobs?keywords=data&location=United%20States,custom
+Domino's,https://jobs.dominos.com/jobs?keywords=data&location=United%20States,custom
+Starbucks,https://starbucks.wd1.myworkdayjobs.com/en-US/External?q=data,workday
+Dunkin,https://www.dunkinfranchising.com/franchisee/en/html/page/careers.html?q=data,custom
+Panera Bread,https://careers.panerabread.com/us/en/search-results?keywords=data&location=United%20States,custom
+Sweetgreen,https://jobs.sweetgreen.com/us/en?q=data&location=United%20States,custom
+Shake Shack,https://www.shakeshack.com/our-shake/careers?q=data,custom
+Coca-Cola,https://careers.coca-colacompany.com/job-search-results/?keyword=data&location=United%20States,custom
+PepsiCo,https://pepsicojobs.com/search-jobs/data/United%20States/1104/1/2/6252001/37/-122/50/2,custom
+Nestle,https://www.nestlejobs.com/nestle-usa?q=data&location=United%20States,custom
+Kraft Heinz,https://careers.kraftheinzcompany.com/Americas-and-APAC/job-search-results/?keyword=data&location=United%20States,custom
+General Mills,https://careers.generalmills.com/jobs?keywords=data&location=United%20States,custom
+Kellogg's,https://jobs.kelloggs.com/en/search-results?keywords=data&location=United%20States,custom
+Mondelez,https://careers.mondelezinternational.com/search?q=data&location=United%20States,custom
+Mars,https://careers.mars.com/global/en/search-results?keywords=data&location=United%20States,custom
+Hershey,https://careers.hersheys.com/search?q=data&location=United%20States,custom
+Hostess,https://www.hostesscakes.com/careers?q=data,custom
+Procter & Gamble,https://www.pgcareers.com/search-jobs?q=data&location=United%20States,custom
+Unilever,https://careers.unilever.com/jobs?keywords=data&location=United%20States,custom
+Colgate-Palmolive,https://jobs.colgate.com/search?q=data&location=United%20States,custom
+Kimberly-Clark,https://www.careers.kimberly-clark.com/en/search-results?keywords=data&location=United%20States,custom
+Clorox,https://clorox.wd5.myworkdayjobs.com/en-US/Clorox?q=data,workday
+Church & Dwight,https://www.churchdwight.com/company/careers.aspx?q=data,custom
+Reckitt,https://careers.reckitt.com/search?q=data&location=United%20States,custom
+SC Johnson,https://scjohnson.wd5.myworkdayjobs.com/en-US/SCJ?q=data,workday
+Estee Lauder,https://elcompanies.wd5.myworkdayjobs.com/en-US/elc?q=data,workday
+L'Oreal,https://careers.loreal.com/en_US/jobs?search=data&location=United%20States,custom
+Revlon,https://www.revloninc.com/careers?q=data,custom
+Coty,https://coty.wd5.myworkdayjobs.com/en-US/CotyInc?q=data,workday
