@@ -1,54 +1,52 @@
 #!/usr/bin/env python3
 """
 Verify which company career URLs are working.
-Outputs a CSV with verified URLs.
+Uses requests library for simple HTTP HEAD/GET checks.
 """
-import asyncio
 import csv
 import sys
+import time
 from typing import List, Tuple
-from playwright.async_api import async_playwright
+from urllib.parse import urlparse
+
+import requests
 
 
-async def verify_url(url: str, timeout: int = 15000) -> Tuple[str, bool, str]:
+def verify_url(url: str, timeout: int = 10) -> Tuple[str, bool, str]:
     """
     Verify if a URL is accessible.
     
     Returns:
         Tuple of (url, is_working, status_message)
     """
-    async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
-        page = await browser.new_page()
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    }
+    
+    try:
+        # First try HEAD request (faster)
+        response = requests.head(url, headers=headers, timeout=timeout, allow_redirects=True)
         
-        try:
-            response = await page.goto(url, wait_until='domcontentloaded', timeout=timeout)
+        if response.status_code == 405:  # Method not allowed, try GET
+            response = requests.get(url, headers=headers, timeout=timeout, allow_redirects=True)
+        
+        if response.ok:
+            return (url, True, f"OK - HTTP {response.status_code}")
+        else:
+            return (url, False, f"Error - HTTP {response.status_code}")
             
-            if response and response.ok:
-                # Check if page has job-related content
-                content = await page.content()
-                content_lower = content.lower()
-                
-                # Look for job-related keywords
-                job_indicators = ['job', 'career', 'position', 'apply', 'opening', 'role', 'work with us']
-                has_jobs = any(indicator in content_lower for indicator in job_indicators)
-                
-                if has_jobs:
-                    return (url, True, "OK - Job content found")
-                else:
-                    return (url, False, "Warning - No job content detected")
-            else:
-                status = response.status if response else "No response"
-                return (url, False, f"Error - HTTP {status}")
-                
-        except Exception as e:
-            error_msg = str(e)[:100]
-            return (url, False, f"Error - {error_msg}")
-        finally:
-            await browser.close()
+    except requests.exceptions.Timeout:
+        return (url, False, "Error - Timeout")
+    except requests.exceptions.ConnectionError:
+        return (url, False, "Error - Connection failed")
+    except requests.exceptions.SSLError:
+        return (url, False, "Error - SSL error")
+    except Exception as e:
+        error_msg = str(e)[:50]
+        return (url, False, f"Error - {error_msg}")
 
 
-async def verify_companies_csv(input_csv: str, output_csv: str):
+def verify_companies_csv(input_csv: str, output_csv: str):
     """Verify all URLs in a companies CSV and output results."""
     
     # Read input CSV
@@ -59,6 +57,7 @@ async def verify_companies_csv(input_csv: str, output_csv: str):
             companies.append(row)
     
     print(f"Verifying {len(companies)} URLs...")
+    print("=" * 60)
     
     results = []
     working_count = 0
@@ -71,15 +70,15 @@ async def verify_companies_csv(input_csv: str, output_csv: str):
         if not url:
             continue
         
-        print(f"  [{i+1}/{len(companies)}] {name}...", end=' ', flush=True)
+        print(f"  [{i+1:3d}/{len(companies)}] {name[:30]:30s}", end=' ', flush=True)
         
-        _, is_working, status = await verify_url(url)
+        _, is_working, status = verify_url(url)
         
         if is_working:
             working_count += 1
-            print("✓")
+            print("✓ Working")
         else:
-            print(f"✗ ({status})")
+            print(f"✗ {status}")
         
         results.append({
             'Company Name': name,
@@ -88,22 +87,26 @@ async def verify_companies_csv(input_csv: str, output_csv: str):
             'Status': 'Working' if is_working else 'Not Working',
             'Details': status,
         })
+        
+        # Small delay to be respectful
+        time.sleep(0.2)
     
-    # Write output CSV
+    # Write output CSV with all results
+    print("\n" + "=" * 60)
     with open(output_csv, 'w', newline='') as f:
         fieldnames = ['Company Name', 'Career Search URL', 'Platform Type', 'Status', 'Details']
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(results)
     
-    print(f"\n=== Summary ===")
+    print(f"=== SUMMARY ===")
     print(f"Total: {len(results)}")
     print(f"Working: {working_count}")
     print(f"Not Working: {len(results) - working_count}")
-    print(f"\nResults saved to: {output_csv}")
+    print(f"\nFull results: {output_csv}")
     
-    # Also output a verified-only CSV
-    verified_csv = output_csv.replace('.csv', '_verified.csv')
+    # Also output a verified-only CSV (for direct import)
+    verified_csv = output_csv.replace('.csv', '_verified_only.csv')
     with open(verified_csv, 'w', newline='') as f:
         fieldnames = ['Company Name', 'Career Search URL', 'Platform Type']
         writer = csv.DictWriter(f, fieldnames=fieldnames)
@@ -116,7 +119,8 @@ async def verify_companies_csv(input_csv: str, output_csv: str):
                     'Platform Type': r['Platform Type'],
                 })
     
-    print(f"Verified URLs saved to: {verified_csv}")
+    print(f"Verified URLs only: {verified_csv}")
+    print("=" * 60)
 
 
 if __name__ == '__main__':
@@ -128,4 +132,4 @@ if __name__ == '__main__':
     input_csv = sys.argv[1]
     output_csv = sys.argv[2] if len(sys.argv) > 2 else 'companies_verification_results.csv'
     
-    asyncio.run(verify_companies_csv(input_csv, output_csv))
+    verify_companies_csv(input_csv, output_csv)
